@@ -8,8 +8,9 @@
 *.out
 coverage.*
 
-# templ generated files (we commit these or not? — commit them for now to keep go build dependency-free)
-# (leave blank for now; revisit if we add `templ generate` to Makefile and want to ignore the output)
+# templ generated files: COMMITTED on purpose so consumers can build
+# the binary without having `templ` installed. Run `make generate` when
+# editing .templ files.
 
 # OS
 .DS_Store
