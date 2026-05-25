@@ -7,7 +7,9 @@ globs = ["**/__Snapshots__/*.png"]
 # Regex applied to each matched file's path (relative to repo root).
 # Named capture groups become axis names that appear in the review UI for
 # grouping and bulk actions. Axis names are free-form.
-axis_regex = '(?P<test>[^/]+)__(?P<state>[^_]+)__(?P<device>[^_]+)__(?P<theme>[^_]+)__(?P<lang>[^.]+)\.png'
+# Note: use [^/_]+ for axis groups so they don't accidentally span underscores
+# or slashes in surrounding path components (e.g. `__Snapshots__/` directories).
+axis_regex = '(?P<test>[^/_]+)__(?P<state>[^/_]+)__(?P<device>[^/_]+)__(?P<theme>[^/_]+)__(?P<lang>[^/.]+)\.png'
 
 # Base git ref to diff the working tree against.
 base_ref = "HEAD"

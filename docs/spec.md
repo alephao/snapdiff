@@ -105,7 +105,9 @@ Single Go binary. Packages under `internal/`:
 
 ## Configuration Schema
 
-See `snapdiff.toml.example`.
+See `snapdiff.toml.example`. Axis groups should use `[^/_]+` (not `[^/]+`)
+so they don't span underscores or slashes in surrounding path components
+(e.g. `__Snapshots__/` directories).
 
 ## Data Flow (happy path)
 
