@@ -1,0 +1,100 @@
+package views
+
+import "github.com/alephao/snapdiff/internal/review"
+
+type IndexData struct {
+	Items     []*review.Item
+	AxisNames []string                        // sorted, derived from items
+	AxisVals  map[string][]string             // axis -> sorted unique values
+}
+
+templ Index(d IndexData) {
+	@Base("Review") {
+		if len(d.Items) == 0 {
+			<section class="empty">
+				<h1>No diffs.</h1>
+				<p>The working tree has no PNG changes in the configured globs.</p>
+			</section>
+		} else {
+			@bulkActionForm(d)
+			<section class="diff-list">
+				<table>
+					<thead>
+						<tr>
+							<th>Status</th>
+							<th>Path</th>
+							for _, name := range d.AxisNames {
+								<th>{ name }</th>
+							}
+							<th>Verdict</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range d.Items {
+							<tr class={ verdictRowClass(item) }>
+								<td>{ item.Diff.Status.String() }</td>
+								<td><a href={ templ.URL("/diff/" + item.ID) }>{ item.Diff.Path }</a></td>
+								for _, name := range d.AxisNames {
+									<td>{ item.Diff.Axes[name] }</td>
+								}
+								<td>{ item.Verdict.Status.String() }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</section>
+			@finalizeForm()
+		}
+	}
+}
+
+templ bulkActionForm(d IndexData) {
+	<section class="bulk-action">
+		<h2>Bulk action</h2>
+		<form method="post" action="/diff/bulk-verdict">
+			<fieldset class="filters">
+				<legend>Filter (leave blank = all)</legend>
+				for _, name := range d.AxisNames {
+					<label>
+						<span>{ name }</span>
+						<select name={ "filter_" + name }>
+							<option value="">— any —</option>
+							for _, val := range d.AxisVals[name] {
+								<option value={ val }>{ val }</option>
+							}
+						</select>
+					</label>
+				}
+			</fieldset>
+			<fieldset class="verdict">
+				<legend>Verdict</legend>
+				<label><input type="radio" name="status" value="approved" checked/> Approve</label>
+				<label><input type="radio" name="status" value="rejected"/> Reject</label>
+				<label>
+					Comment <input type="text" name="comment" placeholder="optional"/>
+				</label>
+			</fieldset>
+			<button type="submit">Apply to all matches</button>
+		</form>
+	</section>
+}
+
+templ finalizeForm() {
+	<section class="finalize">
+		<form method="post" action="/session/finalize">
+			<button type="submit" class="finalize-btn">Finalize and send verdicts to agent</button>
+		</form>
+		<p class="finalize-note">All items must have a verdict before finalize.</p>
+	</section>
+}
+
+func verdictRowClass(item *review.Item) string {
+	switch item.Verdict.Status {
+	case review.StatusApproved:
+		return "row-approved"
+	case review.StatusRejected:
+		return "row-rejected"
+	default:
+		return "row-pending"
+	}
+}

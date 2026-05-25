@@ -1,0 +1,92 @@
+package views
+
+import "github.com/alephao/snapdiff/internal/review"
+
+type DiffData struct {
+	Item      *review.Item
+	AxisNames []string
+}
+
+templ Diff(d DiffData) {
+	@Base(d.Item.Diff.Path) {
+		<section class="diff-meta">
+			<p><a href="/">&larr; back to index</a></p>
+			<dl>
+				<dt>Path</dt><dd>{ d.Item.Diff.Path }</dd>
+				<dt>Status</dt><dd>{ d.Item.Diff.Status.String() }</dd>
+				for _, name := range d.AxisNames {
+					<dt>{ name }</dt><dd>{ d.Item.Diff.Axes[name] }</dd>
+				}
+				<dt>Verdict</dt><dd class={ "verdict-" + d.Item.Verdict.Status.String() }>{ d.Item.Verdict.Status.String() }</dd>
+				if d.Item.Verdict.Comment != "" {
+					<dt>Comment</dt><dd>{ d.Item.Verdict.Comment }</dd>
+				}
+			</dl>
+		</section>
+
+		<section class="mode-switcher" data-diff-id={ d.Item.ID }>
+			<button type="button" data-mode="side"  class="mode-btn active">Side</button>
+			<button type="button" data-mode="swipe" class="mode-btn">Swipe</button>
+			<button type="button" data-mode="toggle" class="mode-btn">Toggle</button>
+			<button type="button" data-mode="pixel" class="mode-btn">Pixel</button>
+			<button type="button" data-mode="onion" class="mode-btn">Onion</button>
+		</section>
+
+		<section class="diff-viewer">
+			<div class="mode-pane mode-side" data-mode="side">
+				<figure>
+					<figcaption>baseline</figcaption>
+					<img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
+				</figure>
+				<figure>
+					<figcaption>current</figcaption>
+					<img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/>
+				</figure>
+			</div>
+
+			<div class="mode-pane mode-swipe" data-mode="swipe" hidden>
+				<div class="swipe-container">
+					<img class="swipe-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
+					<img class="swipe-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/>
+				</div>
+				<input class="swipe-slider" type="range" min="0" max="100" value="50"/>
+			</div>
+
+			<div class="mode-pane mode-toggle" data-mode="toggle" hidden>
+				<div class="toggle-container">
+					<img class="toggle-img toggle-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
+					<img class="toggle-img toggle-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current" hidden/>
+				</div>
+				<p class="toggle-help">Hold <kbd>T</kbd> to flip; click to toggle.</p>
+			</div>
+
+			<div class="mode-pane mode-pixel" data-mode="pixel" hidden>
+				<img src={ "/diff/" + d.Item.ID + "/pixeldiff.png" } alt="pixel diff"/>
+			</div>
+
+			<div class="mode-pane mode-onion" data-mode="onion" hidden>
+				<div class="onion-container">
+					<img class="onion-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
+					<img class="onion-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current" style="opacity:0.5"/>
+				</div>
+				<input class="onion-slider" type="range" min="0" max="100" value="50"/>
+				<p class="onion-help">opacity of <em>current</em> on top of baseline</p>
+			</div>
+		</section>
+
+		<section class="verdict-form">
+			<form method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
+				<fieldset>
+					<legend>Verdict</legend>
+					<label><input type="radio" name="status" value="approved" checked/> Approve</label>
+					<label><input type="radio" name="status" value="rejected"/> Reject</label>
+					<label>
+						Comment
+						<input type="text" name="comment" value={ d.Item.Verdict.Comment } placeholder="(required if rejecting)"/>
+					</label>
+				</fieldset>
+				<button type="submit">Save verdict</button>
+			</form>
+		</section>
+	}
+}

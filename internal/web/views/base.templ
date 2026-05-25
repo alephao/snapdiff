@@ -1,0 +1,23 @@
+package views
+
+templ Base(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } — snapdiff</title>
+			<link rel="stylesheet" href="/static/snapdiff.css"/>
+		</head>
+		<body>
+			<header class="topbar">
+				<a class="brand" href="/">snapdiff</a>
+				<span class="title">{ title }</span>
+			</header>
+			<main>
+				{ children... }
+			</main>
+			<script src="/static/snapdiff.js"></script>
+		</body>
+	</html>
+}
