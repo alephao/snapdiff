@@ -1,0 +1,20 @@
+# Build artifacts
+/snapdiff
+/dist/
+/build/
+
+# Go
+*.test
+*.out
+coverage.*
+
+# templ generated files (we commit these or not? — commit them for now to keep go build dependency-free)
+# (leave blank for now; revisit if we add `templ generate` to Makefile and want to ignore the output)
+
+# OS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
