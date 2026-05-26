@@ -20,7 +20,6 @@ type DiffData struct {
 templ Diff(d DiffData) {
 	@Base(d.Item.Diff.Path, d.NoAnim) {
 		@diffTopbar(d)
-		@diffMeta(d)
 		@diffModes()
 		<main class="stage">
 			<div class="stage-inner">
@@ -66,23 +65,6 @@ templ breadcrumbParts(path string) {
 			{ p }<span class="sep">/</span>
 		}
 	}
-}
-
-templ diffMeta(d DiffData) {
-	<section class="meta">
-		<div class="path">
-			<span class={ "status-tag is-" + d.Item.Diff.Status.String() }>{ statusLetter(d.Item.Diff.Status.String()) }</span>
-			<span class="lead">{ leadDir(d.Item.Diff.Path) }</span>{ baseName(d.Item.Diff.Path) }
-		</div>
-		<div class="axes-inline">
-			for _, name := range d.AxisNames {
-				if v, ok := d.Item.Diff.Axes[name]; ok && v != "" {
-					<span class="ax"><span class="k">{ name + ":" }</span><span class="v">{ v }</span></span>
-				}
-			}
-		</div>
-		<div class={ "verdict-current is-" + d.Item.Verdict.Status.String() }>{ d.Item.Verdict.Status.String() }</div>
-	</section>
 }
 
 templ diffModes() {
@@ -200,27 +182,6 @@ templ verdictDock(d DiffData) {
 }
 
 // ---- helpers ----
-
-func statusLetter(s string) string {
-	switch s {
-	case "added":
-		return "A"
-	case "modified":
-		return "M"
-	case "deleted":
-		return "D"
-	}
-	return "?"
-}
-
-func leadDir(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' {
-			return path[:i+1]
-		}
-	}
-	return ""
-}
 
 func onIf(b bool) string {
 	if b {

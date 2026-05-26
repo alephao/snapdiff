@@ -509,53 +509,6 @@ a { color: inherit; }
   font-family: inherit;
 }
 
-.meta {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--hairline);
-}
-.meta .path {
-  font-size: 13px; color: var(--fg-bright);
-  letter-spacing: 0.02em;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.meta .path .lead { color: var(--fg-dim); }
-
-.status-tag {
-  font-size: 9.5px;
-  letter-spacing: 0.22em; text-transform: uppercase;
-  padding: 2px 6px;
-  border: 1px solid var(--info);
-  color: var(--info);
-  margin-right: 8px;
-}
-.status-tag.is-added { border-color: var(--approved); color: var(--approved); }
-.status-tag.is-deleted { border-color: var(--rejected); color: var(--rejected); }
-
-.axes-inline {
-  display: flex; flex-wrap: wrap; gap: 8px 14px;
-  font-size: 11px; color: var(--fg-muted);
-}
-.axes-inline .ax {
-  display: inline-flex; align-items: center; gap: 4px;
-}
-.axes-inline .ax .k { color: var(--fg-dim); }
-.axes-inline .ax .v { color: var(--fg-bright); }
-
-.verdict-current {
-  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
-  color: var(--pending);
-}
-.verdict-current::before { content: "●  "; }
-.verdict-current.is-approved { color: var(--approved); }
-.verdict-current.is-approved::before { content: "✓  "; }
-.verdict-current.is-rejected { color: var(--rejected); }
-.verdict-current.is-rejected::before { content: "✕  "; }
-
 /* mode switcher */
 .modes {
   display: flex;
@@ -852,7 +805,6 @@ a { color: inherit; }
 }
 
 @media (max-width: 760px) {
-  .meta { grid-template-columns: 1fr; }
   .pane-side { flex-direction: column; }
   .dt-topbar { grid-template-columns: auto 1fr; }
   .nav-prev-next { display: none; }
