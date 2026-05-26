@@ -53,6 +53,30 @@ make test       # unit + integration
 make release    # cross-compile matrix
 ```
 
+## Screenshot tests (visual regression, opt-in)
+
+The web UI is covered by a Playwright suite under `tests-screenshots/`.
+Per ADR-0017, the baselines are reviewed *with snapdiff itself*: there
+is a `snapdiff.toml` at the repo root pointing at
+`tests-screenshots/baselines/`.
+
+First-time setup (requires Node):
+
+```sh
+make screenshots-install        # npm install + chromium browser
+```
+
+Daily flow when you change CSS or templ views:
+
+```sh
+make screenshots                # green if no regression
+# if it fails:
+make screenshots-update         # rewrite baselines
+snapdiff serve                  # review your own diff in snapdiff
+# approve / reject in the browser; rejected files are reverted by
+# `git checkout HEAD --`, approved ones stay dirty for `git commit`.
+```
+
 ## Status
 
 Pre-MVP. See `docs/spec.md` for the V-Model breakdown of scope and verification.

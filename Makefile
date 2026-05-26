@@ -15,7 +15,8 @@ PLATFORMS := \
 	linux/arm64 \
 	windows/amd64
 
-.PHONY: all build generate test vet fmt lint release clean acceptance
+.PHONY: all build generate test vet fmt lint release clean acceptance \
+	screenshots screenshots-update screenshots-install
 
 all: lint test build
 
@@ -50,6 +51,17 @@ lint:
 
 clean:
 	rm -rf $(BIN) dist/
+
+# Visual-regression screenshot suite (Playwright). Opt-in: requires Node
+# + chromium installed in tests-screenshots/. See docs/adr/0017-*.md.
+screenshots-install:
+	@cd tests-screenshots && npm install && npx --no-install playwright install chromium
+
+screenshots:
+	@cd tests-screenshots && npx --no-install playwright test
+
+screenshots-update:
+	@cd tests-screenshots && npx --no-install playwright test --update-snapshots
 
 # Cross-compile the matrix from a single host (CGO disabled).
 release: generate

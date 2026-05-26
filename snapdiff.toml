@@ -1,0 +1,18 @@
+# snapdiff config for the snapdiff project itself — dogfood.
+#
+# When `make screenshots-update` regenerates the Playwright baselines,
+# the modified PNGs land under tests-screenshots/baselines/. Run
+# `snapdiff serve` from this directory to review them with snapdiff.
+#
+# Baseline filenames follow `<page>-<scenario>-<viewport>.png` (dashes,
+# because Playwright slugifies the snapshot name). The axis regex below
+# extracts those three free-form axes so the review UI can filter / bulk-
+# act on them (e.g. approve all viewport=desktop).
+
+[snapshots]
+globs = ["tests-screenshots/baselines/*.png"]
+axis_regex = '(?P<page>[^/-]+)-(?P<scenario>[^/-]+)-(?P<viewport>[^/.]+)\.png'
+
+[server]
+bind = "0.0.0.0:7777"
+linger_seconds = 60

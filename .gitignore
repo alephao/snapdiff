@@ -12,6 +12,13 @@ coverage.*
 # the binary without having `templ` installed. Run `make generate` when
 # editing .templ files.
 
+# Playwright (screenshot tests)
+tests-screenshots/node_modules/
+tests-screenshots/test-results/
+tests-screenshots/playwright-report/
+tests-screenshots/.runtime
+tests-screenshots/.runtime-bin/
+
 # OS
 .DS_Store
 

@@ -597,8 +597,10 @@ a { color: inherit; }
   min-height: 70vh;
 }
 .stage-inner { width: 100%; max-width: 1000px; }
-.pane { display: none; }
-.pane.is-active { display: block; }
+/* Only the active pane shows. `:not()` + `!important` beats the later
+   per-mode rules (`.pane-side { display: flex }` etc.) which would
+   otherwise win on cascade since they're same-specificity-later. */
+.pane:not(.is-active) { display: none !important; }
 
 .phone-frame {
   border: 1px solid var(--divider);

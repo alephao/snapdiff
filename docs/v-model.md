@@ -71,7 +71,7 @@ Each requirement in `docs/spec.md` maps to at least one test:
 | R1  | Acceptance test § Finalize verdicts                                    |
 | R2  | Acceptance test § Bulk + per-file actions; `internal/review` unit tests |
 | R3  | `internal/gitscan` unit tests § axis regex; `internal/web` index tests |
-| R4  | `internal/web` per-mode rendering tests (one per mode)                 |
+| R4  | `internal/web` per-mode rendering tests (one per mode); plus the Playwright screenshot suite at `tests-screenshots/` exercising all 5 modes × desktop+mobile (per ADR-0017) |
 | R5  | `Makefile` `release` target produces matrix binaries                   |
 | R6  | Implicit — no auth code present (verified by code review + grep check) |
 | R7  | Acceptance test § `await` stdout JSON contract                         |

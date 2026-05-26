@@ -178,6 +178,7 @@ The **acceptance test is the north star**. See `docs/v-model.md` for detail.
 | 014 | Verification framework      | Accepted |
 | 015 | Pixel diff library          | Accepted |
 | 016 | HTTP router                 | Accepted |
+| 017 | Screenshot tests (Playwright + dogfood) | Accepted |
 
 ## Build Order
 
