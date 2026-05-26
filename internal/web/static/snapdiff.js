@@ -42,6 +42,16 @@
     }
   });
 
+  // Click image to toggle zoom (fit ↔ 1×). stopPropagation so it doesn't
+  // also trigger the toggle-mode lock handler bound on #toggleWrap.
+  const stage = $('.stage');
+  $$('.phone-frame img').forEach(img => {
+    img.addEventListener('click', e => {
+      e.stopPropagation();
+      if (stage) stage.classList.toggle('is-zoomed');
+    });
+  });
+
   // Swipe slider
   const swipeSlider = $('#swipeSlider');
   const swipeAbove  = $('#swipeAbove');

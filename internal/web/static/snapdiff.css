@@ -63,6 +63,9 @@ body.no-anim *::after {
   --info:      #8eb6d6;
   --accent:    #d9a847;
   --shadow-1:  0 1px 0 rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.4);
+  /* diff page: vertical room available for the screenshot image
+     (viewport minus topbar + meta + modes + stage top padding + verdict dock) */
+  --diff-image-max-h: calc(100vh - 232px);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -610,7 +613,21 @@ a { color: inherit; }
   position: relative;
   display: block;
 }
-.phone-frame img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+.phone-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: var(--diff-image-max-h);
+  width: auto;
+  height: auto;
+  image-rendering: pixelated;
+  cursor: zoom-in;
+}
+.stage.is-zoomed { overflow: auto; }
+.stage.is-zoomed .phone-frame img {
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+}
 .phone-label {
   text-align: center;
   font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
