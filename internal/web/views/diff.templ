@@ -10,16 +10,19 @@ import (
 type DiffData struct {
 	Item      *review.Item
 	AxisNames []string
-	Position  int    // 1-based position among all items
-	Total     int    // total items
-	PrevID    string // empty if no prev
-	NextID    string // empty if no next
-	NoAnim    bool   // set by ?noanim=1 for deterministic screenshot tests
+	Position  int         // 1-based position among all items
+	Total     int         // total items
+	PrevID    string      // empty if no prev
+	NextID    string      // empty if no next
+	NoAnim    bool        // set by ?noanim=1 for deterministic screenshot tests
+	Groups    []ItemGroup // grouped by leaf directory of Path (for left sidebar)
+	Counts    Counts      // session totals (for sidebar header / progress)
 }
 
 templ Diff(d DiffData) {
 	@Base(d.Item.Diff.Path, d.NoAnim) {
 		@diffTopbar(d)
+		@leftSidebar(d)
 		<main class="stage">
 			<div class="stage-inner">
 				@paneSide(d)
@@ -148,6 +151,61 @@ templ paneOnion(d DiffData) {
 	</section>
 }
 
+templ leftSidebar(d DiffData) {
+	<aside class="leftbar">
+		<div class="sb-head">
+			<div class="sb-head-row">
+				<span class="sb-ttl">snapshots</span>
+				<span class="sb-pos">
+					<strong>{ fmt.Sprint(d.Counts.Approved + d.Counts.Rejected) }</strong>
+					<span class="sep">/</span>
+					<span class="total">{ fmt.Sprint(d.Counts.Total) }</span>
+				</span>
+			</div>
+			<div class="sb-progress">
+				@segmentBar(d.Counts)
+			</div>
+		</div>
+		<div class="sb-filter">
+			<button type="button" class="is-on" data-scope="all">all <span class="count">{ fmt.Sprint(d.Counts.Total) }</span></button>
+			<button type="button" data-scope="pending">pending <span class="count">{ fmt.Sprint(d.Counts.Pending) }</span></button>
+		</div>
+		<nav class="sb-list">
+			for _, g := range d.Groups {
+				@sbGroup(d, g)
+			}
+		</nav>
+	</aside>
+}
+
+templ sbGroup(d DiffData, g ItemGroup) {
+	<section class="sb-group">
+		<header class="sb-group-head">
+			<span class="caret">▾</span>
+			<span class="ttl">{ g.Label }</span>
+			<span class="mini-stats">
+				<span><span class="dot dot-a"></span>{ fmt.Sprint(g.Counts.Approved) }</span>
+				<span><span class="dot dot-r"></span>{ fmt.Sprint(g.Counts.Rejected) }</span>
+				<span><span class="dot dot-p"></span>{ fmt.Sprint(g.Counts.Pending) }</span>
+			</span>
+		</header>
+		<div class="sb-rows">
+			for _, item := range g.Items {
+				@sbRow(d, item)
+			}
+		</div>
+	</section>
+}
+
+templ sbRow(d DiffData, item *review.Item) {
+	<a class={ sbRowClass(item, d.Item.ID) } href={ templ.URL("/diff/" + item.ID) }>
+		<span class="glyph">{ glyph(item) }</span>
+		<span class="ftag">{ fileTag(item) }</span>
+		<span class="name">{ baseName(item.Diff.Path) }</span>
+		<span class="v-mini">{ verdictMini(item.Verdict.Status) }</span>
+	</a>
+}
+
 templ rightRail(d DiffData) {
 	<aside class="rightbar">
 		<form class="rb-section rb-verdict" method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
@@ -193,4 +251,48 @@ func nextURL(id string) string {
 		return "/"
 	}
 	return "/diff/" + id
+}
+
+func sbRowClass(item *review.Item, activeID string) string {
+	cls := "sb-row"
+	switch item.Diff.Status.String() {
+	case "added":
+		cls += " is-added"
+	case "modified":
+		cls += " is-modified"
+	case "deleted":
+		cls += " is-deleted"
+	}
+	switch item.Verdict.Status {
+	case review.StatusApproved:
+		cls += " is-approved"
+	case review.StatusRejected:
+		cls += " is-rejected"
+	}
+	if item.ID == activeID {
+		cls += " is-current"
+	}
+	return cls
+}
+
+func fileTag(item *review.Item) string {
+	switch item.Diff.Status.String() {
+	case "added":
+		return "A"
+	case "modified":
+		return "M"
+	case "deleted":
+		return "D"
+	}
+	return "?"
+}
+
+func verdictMini(s review.VerdictStatus) string {
+	switch s {
+	case review.StatusApproved:
+		return "ok"
+	case review.StatusRejected:
+		return "no"
+	}
+	return "…"
 }

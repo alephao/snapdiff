@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>snapdiff — diff page with left sidebar (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0c0c0d;
+    --surface:   #15151a;
+    --raised:    #1c1c22;
+    --elevated:  #24242c;
+    --hairline:  #25252e;
+    --divider:   #2f2f3a;
+    --emphasis:  #43434f;
+    --fg-dim:    #58585f;
+    --fg-muted:  #87878f;
+    --fg:        #c8c8d2;
+    --fg-bright: #f5f5fa;
+    --pending:   #d9a847;
+    --approved:  #7eb87b;
+    --rejected:  #d97757;
+    --info:      #8eb6d6;
+    --accent:    #d9a847;
+
+    --sidebar-w: 260px;
+    --rail-w:    260px;
+    --topbar-h:  46px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    font-variant-ligatures: none;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ===== TOPBAR (simplified, full-width) ===== */
+  .dt-topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    padding: 8px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+    height: var(--topbar-h);
+  }
+  .back {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--fg-muted);
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 9px;
+    border: 1px solid var(--hairline);
+  }
+  .back .arrow { color: var(--accent); }
+  .breadcrumb {
+    padding-left: 14px;
+    color: var(--fg-dim);
+    font-size: 12px; letter-spacing: 0.04em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .breadcrumb .sep { color: var(--fg-dim); margin: 0 6px; }
+  .breadcrumb .leaf { color: var(--fg-bright); font-weight: 500; }
+  .nav-prev-next { display: flex; gap: 6px; font-size: 11px; color: var(--fg-muted); }
+  .nav-prev-next .nbtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--hairline);
+    color: var(--fg-muted);
+  }
+  .nav-prev-next .nbtn .pos { color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+  .nav-prev-next kbd {
+    background: var(--raised);
+    border: 1px solid var(--hairline);
+    padding: 1px 5px;
+    font-size: 9.5px;
+    color: var(--fg-muted);
+    font-family: inherit;
+  }
+
+  /* ===== LEFT SIDEBAR ===== */
+  .leftbar {
+    position: fixed;
+    top: var(--topbar-h);
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-w);
+    z-index: 55;
+    background: var(--surface);
+    border-right: 1px solid var(--divider);
+    box-shadow: 8px 0 24px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column;
+  }
+
+  /* sidebar header (label + progress) */
+  .sb-head {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .sb-head .row1 {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .sb-head .ttl {
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .sb-head .pos {
+    font-size: 10.5px; color: var(--fg-bright);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .sb-head .pos .sep { color: var(--fg-dim); margin: 0 2px; }
+  .sb-head .pos .total { color: var(--fg-muted); }
+
+  .sb-progress {
+    height: 4px;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    position: relative; overflow: hidden;
+  }
+  .sb-progress .seg { position: absolute; top: 0; bottom: 0; }
+  .sb-progress .seg-a { background: var(--approved); }
+  .sb-progress .seg-r { background: var(--rejected); }
+  .sb-progress .seg-p {
+    background: repeating-linear-gradient(45deg, var(--pending) 0 4px, transparent 4px 8px);
+    opacity: 0.55;
+  }
+
+  /* sidebar filter row (status scope only) */
+  .sb-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--raised);
+  }
+  .sb-filter button {
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--hairline);
+    color: var(--fg-muted);
+    font-family: inherit;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: color 80ms ease, background 80ms ease;
+  }
+  .sb-filter button:last-child { border-right: 0; }
+  .sb-filter button:hover { color: var(--fg-bright); }
+  .sb-filter button.is-on {
+    color: var(--accent);
+    background: var(--surface);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+  .sb-filter .count {
+    color: var(--fg-dim);
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sb-filter button.is-on .count { color: var(--accent); }
+
+  /* sidebar list */
+  .sb-list {
+    flex: 1; overflow-y: auto;
+    padding-bottom: 12px;
+  }
+  .sb-group { border-bottom: 1px solid var(--hairline); }
+  .sb-group-head {
+    display: grid;
+    grid-template-columns: 14px 1fr auto;
+    gap: 8px; align-items: center;
+    padding: 7px 12px;
+    background: var(--surface);
+    cursor: pointer;
+    color: var(--fg-muted);
+    font-size: 10.5px; letter-spacing: 0.06em;
+    user-select: none;
+  }
+  .sb-group-head:hover { color: var(--fg-bright); }
+  .sb-group-head .caret { color: var(--fg-dim); transition: transform 120ms ease; }
+  .sb-group.is-collapsed .caret { transform: rotate(-90deg); }
+  .sb-group-head .ttl {
+    color: var(--fg-bright); font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sb-group-head .ttl .ns { color: var(--fg-dim); }
+  .sb-group-head .mini-stats {
+    display: inline-flex; gap: 6px;
+    font-size: 9.5px; color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .sb-group-head .mini-stats span {
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .sb-group-head .mini-stats .dot {
+    width: 5px; height: 5px; background: var(--fg-dim);
+  }
+  .sb-group-head .mini-stats .dot-p { background: var(--pending); }
+  .sb-group-head .mini-stats .dot-a { background: var(--approved); }
+  .sb-group-head .mini-stats .dot-r { background: var(--rejected); }
+
+  .sb-rows { background: var(--bg); }
+  .sb-group.is-collapsed .sb-rows { display: none; }
+
+  .sb-row {
+    display: grid;
+    grid-template-columns: 14px 18px 1fr auto;
+    gap: 8px; align-items: start;
+    padding: 7px 12px 7px 18px;
+    border-top: 1px solid var(--hairline);
+    color: var(--fg-muted);
+    font-size: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+  }
+  /* keep glyph/ftag/verdict aligned with first line of the wrapping name */
+  .sb-row .glyph,
+  .sb-row .ftag,
+  .sb-row .v-mini {
+    margin-top: 1px;
+  }
+  .sb-row::before {
+    content: ""; position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px; background: transparent;
+    transition: background 80ms ease;
+  }
+  .sb-row:hover { background: var(--surface); color: var(--fg); }
+  .sb-row:hover::before { background: var(--accent); opacity: 0.35; }
+  .sb-row.is-approved::before { background: var(--approved); opacity: 0.6; }
+  .sb-row.is-rejected::before { background: var(--rejected); opacity: 0.6; }
+  .sb-row.is-current {
+    background: var(--elevated);
+    color: var(--fg-bright);
+  }
+  .sb-row.is-current::before {
+    background: var(--accent);
+    opacity: 1;
+    width: 3px;
+  }
+  .sb-row.is-current .name { color: var(--fg-bright); font-weight: 500; }
+
+  .sb-row .glyph { text-align: center; font-size: 10px; color: var(--pending); }
+  .sb-row.is-approved .glyph { color: var(--approved); }
+  .sb-row.is-rejected .glyph { color: var(--rejected); }
+
+  .sb-row .ftag {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 14px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
+  }
+  .sb-row.is-added    .ftag { color: var(--approved); }
+  .sb-row.is-modified .ftag { color: var(--info); }
+  .sb-row.is-deleted  .ftag { color: var(--rejected); }
+
+  .sb-row .name {
+    font-size: 11.5px;
+    /* wrap long filenames; break on punctuation in snapshot identifiers */
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
+  }
+  .sb-row .name .axes {
+    color: var(--fg-dim); font-size: 10px; margin-left: 4px;
+  }
+
+  .sb-row .v-mini {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .sb-row.is-approved .v-mini { color: var(--approved); }
+  .sb-row.is-rejected .v-mini { color: var(--rejected); }
+
+  /* ===== STAGE (placeholder) ===== */
+  .stage {
+    margin-left: var(--sidebar-w);
+    margin-right: var(--rail-w);
+    padding: 24px 18px 32px;
+    min-height: calc(100vh - var(--topbar-h));
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(800px 400px at 50% 0%, rgba(217,168,71,0.04), transparent 70%),
+      var(--bg);
+  }
+  .placeholder {
+    border: 1px dashed var(--emphasis);
+    color: var(--fg-dim);
+    padding: 60px 30px;
+    text-align: center;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+  .placeholder .ph-title {
+    color: var(--fg-muted);
+    display: block;
+    margin-bottom: 8px;
+    font-size: 10px;
+  }
+  .placeholder .ph-sub {
+    color: var(--fg-dim);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11px;
+    margin-top: 14px;
+  }
+
+  /* ===== RIGHT RAIL (verdict, condensed for mock) ===== */
+  .rightbar {
+    position: fixed; right: 0; top: var(--topbar-h); bottom: 0;
+    width: var(--rail-w);
+    z-index: 60;
+    background: var(--surface);
+    border-left: 1px solid var(--divider);
+    box-shadow: -8px 0 24px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column;
+    padding: 16px;
+  }
+  .rb-label {
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--fg-muted); margin: 0 0 10px;
+  }
+  .v-toggle {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--hairline);
+    background: var(--bg);
+  }
+  .v-opt {
+    padding: 11px; background: transparent; border: 0;
+    color: var(--fg-muted);
+    font-family: inherit; font-size: 11px; text-transform: uppercase;
+    text-align: left;
+  }
+  .v-opt + .v-opt { border-left: 1px solid var(--hairline); }
+</style>
+</head>
+<body>
+
+<!-- ===================== TOPBAR ===================== -->
+<header class="dt-topbar">
+  <a class="back" href="#"><span class="arrow">←</span> all diffs</a>
+  <div class="breadcrumb">
+    ProfileViewTests<span class="sep">/</span><span class="leaf">formViewSignedIn.dark.en.png</span>
+  </div>
+  <div class="nav-prev-next">
+    <a class="nbtn" href="#"><kbd>k</kbd> prev</a>
+    <span class="nbtn"><span class="pos">7 / 24</span></span>
+    <a class="nbtn" href="#">next <kbd>j</kbd></a>
+  </div>
+</header>
+
+<!-- ===================== LEFT SIDEBAR ===================== -->
+<aside class="leftbar">
+  <div class="sb-head">
+    <div class="row1">
+      <span class="ttl">snapshots</span>
+      <span class="pos"><strong>7</strong><span class="sep">/</span><span class="total">24</span></span>
+    </div>
+    <div class="sb-progress">
+      <div class="seg seg-a" style="left:0%; width:25%"></div>
+      <div class="seg seg-r" style="left:25%; width:8%"></div>
+      <div class="seg seg-p" style="left:33%; width:67%"></div>
+    </div>
+  </div>
+
+  <div class="sb-filter">
+    <button class="is-on">all <span class="count">24</span></button>
+    <button>pending <span class="count">17</span></button>
+  </div>
+
+  <nav class="sb-list">
+
+    <!-- group 1 -->
+    <section class="sb-group">
+      <header class="sb-group-head">
+        <span class="caret">▾</span>
+        <span class="ttl">HomeViewTests</span>
+        <span class="mini-stats">
+          <span><span class="dot dot-a"></span>3</span>
+          <span><span class="dot dot-r"></span>1</span>
+          <span><span class="dot dot-p"></span>0</span>
+        </span>
+      </header>
+      <div class="sb-rows">
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">empty.light.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">empty.dark.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-modified is-rejected" href="#">
+          <span class="glyph">✕</span>
+          <span class="ftag">M</span>
+          <span class="name">loaded.light.en.png</span>
+          <span class="v-mini">no</span>
+        </a>
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">loaded.dark.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- group 2 (contains current) -->
+    <section class="sb-group">
+      <header class="sb-group-head">
+        <span class="caret">▾</span>
+        <span class="ttl">ProfileViewTests</span>
+        <span class="mini-stats">
+          <span><span class="dot dot-a"></span>2</span>
+          <span><span class="dot dot-r"></span>0</span>
+          <span><span class="dot dot-p"></span>4</span>
+        </span>
+      </header>
+      <div class="sb-rows">
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">signedOut.light.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">signedOut.dark.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-modified is-current" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">formViewSignedIn.dark.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">formViewSignedIn.light.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">formViewSignedInWithEditableAvatar.dark.de.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">formViewSignedInWithEditableAvatar.light.de.png</span>
+          <span class="v-mini">…</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- group 3 -->
+    <section class="sb-group">
+      <header class="sb-group-head">
+        <span class="caret">▾</span>
+        <span class="ttl">SettingsViewTests</span>
+        <span class="mini-stats">
+          <span><span class="dot dot-a"></span>1</span>
+          <span><span class="dot dot-r"></span>0</span>
+          <span><span class="dot dot-p"></span>5</span>
+        </span>
+      </header>
+      <div class="sb-rows">
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">root.light.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-added" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">A</span>
+          <span class="name">accountSwitcher.light.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-added" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">A</span>
+          <span class="name">accountSwitcher.dark.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">notificationsRow.light.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">notificationsRow.dark.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-deleted" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">D</span>
+          <span class="name">legacyBanner.light.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- group 4 collapsed -->
+    <section class="sb-group is-collapsed">
+      <header class="sb-group-head">
+        <span class="caret">▾</span>
+        <span class="ttl">OnboardingViewTests</span>
+        <span class="mini-stats">
+          <span><span class="dot dot-a"></span>0</span>
+          <span><span class="dot dot-r"></span>0</span>
+          <span><span class="dot dot-p"></span>4</span>
+        </span>
+      </header>
+      <div class="sb-rows">
+        <!-- hidden -->
+      </div>
+    </section>
+
+    <!-- group 5 -->
+    <section class="sb-group">
+      <header class="sb-group-head">
+        <span class="caret">▾</span>
+        <span class="ttl">NavBarTests</span>
+        <span class="mini-stats">
+          <span><span class="dot dot-a"></span>1</span>
+          <span><span class="dot dot-r"></span>0</span>
+          <span><span class="dot dot-p"></span>2</span>
+        </span>
+      </header>
+      <div class="sb-rows">
+        <a class="sb-row is-modified is-approved" href="#">
+          <span class="glyph">✓</span>
+          <span class="ftag">M</span>
+          <span class="name">default.light.en.png</span>
+          <span class="v-mini">ok</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">default.dark.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+        <a class="sb-row is-modified" href="#">
+          <span class="glyph">●</span>
+          <span class="ftag">M</span>
+          <span class="name">withSearch.light.en.png</span>
+          <span class="v-mini">…</span>
+        </a>
+      </div>
+    </section>
+
+  </nav>
+</aside>
+
+<!-- ===================== STAGE (placeholder) ===================== -->
+<main class="stage">
+  <div class="placeholder">
+    <span class="ph-title">[ diff viewer ]</span>
+    side · swipe · toggle · pixel · onion
+    <div class="ph-sub">unchanged area — this mock is about the left sidebar</div>
+  </div>
+</main>
+
+<!-- ===================== RIGHT RAIL (verdict only, abbreviated) ===================== -->
+<aside class="rightbar">
+  <span class="rb-label">verdict</span>
+  <div class="v-toggle">
+    <button class="v-opt">✓ approve</button>
+    <button class="v-opt">✕ reject</button>
+  </div>
+</aside>
+
+</body>
+</html>

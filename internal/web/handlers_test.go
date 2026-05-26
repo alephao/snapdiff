@@ -130,6 +130,47 @@ func TestDiffPage_rendersWithModes(t *testing.T) {
 	}
 }
 
+func TestDiffPage_sidebarListsAllAndMarksCurrent(t *testing.T) {
+	srv, sess, _ := newTestServer(t, []gitscan.Diff{
+		{Path: "tests/HomeViewTests/a.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},
+		{Path: "tests/HomeViewTests/b.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},
+		{Path: "tests/ProfileViewTests/c.png", Status: gitscan.StatusAdded, Current: tinyPNG(1)},
+	})
+	items := sess.Items()
+	currentID := items[1].ID
+
+	w := do(t, srv.Handler(), "GET", "/diff/"+currentID, nil)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	body := w.Body.String()
+
+	if !strings.Contains(body, `class="leftbar"`) {
+		t.Errorf("expected .leftbar in body")
+	}
+	for _, name := range []string{"a.png", "b.png", "c.png"} {
+		if !strings.Contains(body, name) {
+			t.Errorf("expected sidebar to list %q", name)
+		}
+	}
+	for _, label := range []string{"HomeViewTests", "ProfileViewTests"} {
+		if !strings.Contains(body, label) {
+			t.Errorf("expected group header %q", label)
+		}
+	}
+	// The current item's row carries is-current; verify it does and the others don't.
+	currentHref := `href="/diff/` + currentID + `"`
+	cur := strings.Index(body, currentHref)
+	if cur < 0 {
+		t.Fatalf("expected anchor for current diff in sidebar")
+	}
+	// Look backwards a short distance for the opening <a tag and ensure is-current is on it.
+	tagStart := strings.LastIndex(body[:cur], "<a ")
+	if tagStart < 0 || !strings.Contains(body[tagStart:cur], "is-current") {
+		t.Errorf("current diff anchor missing is-current class:\n%s", body[tagStart:cur])
+	}
+}
+
 func TestImageEndpoints(t *testing.T) {
 	srv, sess, _ := newTestServer(t, []gitscan.Diff{
 		{Path: "a.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},

@@ -4,21 +4,48 @@
   function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
   function inField(el) { return /input|textarea/i.test(el && el.tagName || ''); }
 
-  // ---------- INDEX PAGE ----------
+  // ---------- INDEX PAGE + DIFF SIDEBAR ----------
 
-  // Group collapse
-  $$('.group-head').forEach(h => {
+  // Group collapse (index .group + diff sidebar .sb-group)
+  $$('.group-head, .sb-group-head').forEach(h => {
     h.addEventListener('click', () => h.parentElement.classList.toggle('is-collapsed'));
   });
 
-  // "g" collapses/expands all groups
+  // "g" collapses/expands all groups on whichever page we're on
   document.addEventListener('keydown', e => {
     if (inField(e.target)) return;
     if (e.key === 'g') {
-      const anyOpen = !!$('.group:not(.is-collapsed)');
-      $$('.group').forEach(g => g.classList.toggle('is-collapsed', anyOpen));
+      const groups = $$('.group, .sb-group');
+      if (groups.length === 0) return;
+      const anyOpen = groups.some(g => !g.classList.contains('is-collapsed'));
+      groups.forEach(g => g.classList.toggle('is-collapsed', anyOpen));
     }
   });
+
+  // ---------- DIFF SIDEBAR (left rail) ----------
+
+  // all / pending toggle: hide decided rows and any group that becomes empty.
+  const sbList = $('.sb-list');
+  const sbScopeAll     = $('.sb-filter button[data-scope="all"]');
+  const sbScopePending = $('.sb-filter button[data-scope="pending"]');
+  function setSidebarScope(scope) {
+    if (!sbList) return;
+    const pendingOnly = scope === 'pending';
+    sbList.classList.toggle('is-pending-only', pendingOnly);
+    if (sbScopeAll)     sbScopeAll.classList.toggle('is-on', !pendingOnly);
+    if (sbScopePending) sbScopePending.classList.toggle('is-on',  pendingOnly);
+    // CSS hides decided rows; here we hide groups that have no pending rows.
+    $$('.sb-group').forEach(g => {
+      const hasPending = !!g.querySelector('.sb-row:not(.is-approved):not(.is-rejected)');
+      g.classList.toggle('is-empty-in-scope', pendingOnly && !hasPending);
+    });
+  }
+  if (sbScopeAll)     sbScopeAll.addEventListener('click',     () => setSidebarScope('all'));
+  if (sbScopePending) sbScopePending.addEventListener('click', () => setSidebarScope('pending'));
+
+  // Scroll the current diff into view inside the sidebar on load.
+  const sbCurrent = $('.sb-row.is-current');
+  if (sbCurrent) sbCurrent.scrollIntoView({ block: 'nearest' });
 
   // ---------- DIFF PAGE ----------
 

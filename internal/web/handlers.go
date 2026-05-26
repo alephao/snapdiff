@@ -124,6 +124,8 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		PrevID:    prev,
 		NextID:    next,
 		NoAnim:    noAnim(r),
+		Groups:    buildGroups(items),
+		Counts:    countItems(items),
 	}))
 }
 
