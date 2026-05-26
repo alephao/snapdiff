@@ -189,7 +189,17 @@ func (s *Server) handleVerdict(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, safeNext(r.FormValue("next")), http.StatusSeeOther)
+}
+
+// safeNext returns the redirect target after a verdict save. Only same-origin
+// paths are honored; anything else falls back to the index.
+func safeNext(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" || !strings.HasPrefix(v, "/") || strings.HasPrefix(v, "//") {
+		return "/"
+	}
+	return v
 }
 
 func (s *Server) handleBulkVerdict(w http.ResponseWriter, r *http.Request) {

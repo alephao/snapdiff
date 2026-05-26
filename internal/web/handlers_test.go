@@ -178,6 +178,37 @@ func TestVerdictApprove(t *testing.T) {
 	}
 }
 
+func TestVerdictApprove_redirectsToNextWhenProvided(t *testing.T) {
+	srv, sess, _ := newTestServer(t, []gitscan.Diff{
+		{Path: "a.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},
+		{Path: "b.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},
+	})
+	id := sess.Items()[0].ID
+	nextID := sess.Items()[1].ID
+	w := do(t, srv.Handler(), "POST", "/diff/"+id+"/verdict",
+		formBody(url.Values{"status": {"approved"}, "next": {"/diff/" + nextID}}))
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303", w.Code)
+	}
+	if got := w.Header().Get("Location"); got != "/diff/"+nextID {
+		t.Errorf("Location = %q, want /diff/%s", got, nextID)
+	}
+}
+
+func TestVerdictApprove_rejectsOffsiteNext(t *testing.T) {
+	srv, sess, _ := newTestServer(t, []gitscan.Diff{
+		{Path: "a.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},
+	})
+	id := sess.Items()[0].ID
+	for _, bad := range []string{"https://evil.example/", "//evil.example/x", "evil"} {
+		w := do(t, srv.Handler(), "POST", "/diff/"+id+"/verdict",
+			formBody(url.Values{"status": {"approved"}, "next": {bad}}))
+		if got := w.Header().Get("Location"); got != "/" {
+			t.Errorf("next=%q: Location = %q, want /", bad, got)
+		}
+	}
+}
+
 func TestVerdictRejectWithComment(t *testing.T) {
 	srv, sess, _ := newTestServer(t, []gitscan.Diff{
 		{Path: "a.png", Status: gitscan.StatusModified, Baseline: tinyPNG(0), Current: tinyPNG(1)},

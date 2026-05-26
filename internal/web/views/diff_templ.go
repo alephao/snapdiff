@@ -692,20 +692,33 @@ func rightRail(d DiffData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "> <textarea class=\"v-comment\" name=\"comment\" rows=\"4\" placeholder=\"why? (required for reject — quote the offending region if useful)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "> <input type=\"hidden\" name=\"next\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var30 string
-		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(d.Item.Verdict.Comment)
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(nextURL(d.NextID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `diff.templ`, Line: 161, Col: 161}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `diff.templ`, Line: 161, Col: 61}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</textarea> <button type=\"submit\" class=\"v-save\">save verdict <span class=\"hint\">⌘↵</span></button></form><div class=\"rb-spacer\"></div><div class=\"rb-section rb-shortcuts\"><span class=\"rb-label\">shortcuts</span><ul><li><span class=\"keys\"><kbd>1</kbd><span class=\"sep-key\">–</span><kbd>5</kbd></span><span>change mode</span></li><li><span class=\"keys\"><kbd>a</kbd></span><span>approve</span></li><li><span class=\"keys\"><kbd>r</kbd></span><span>reject</span></li><li><span class=\"keys\"><kbd>j</kbd></span><span>next diff</span></li><li><span class=\"keys\"><kbd>k</kbd></span><span>prev diff</span></li><li><span class=\"keys\"><kbd>esc</kbd></span><span>back to index</span></li></ul></div></aside>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"> <textarea class=\"v-comment\" name=\"comment\" rows=\"4\" placeholder=\"why? (required for reject — quote the offending region if useful)\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(d.Item.Verdict.Comment)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `diff.templ`, Line: 162, Col: 161}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</textarea> <button type=\"submit\" class=\"v-save\">save verdict <span class=\"hint\">⌘↵</span></button></form><div class=\"rb-spacer\"></div><div class=\"rb-section rb-shortcuts\"><span class=\"rb-label\">shortcuts</span><ul><li><span class=\"keys\"><kbd>1</kbd><span class=\"sep-key\">–</span><kbd>5</kbd></span><span>change mode</span></li><li><span class=\"keys\"><kbd>a</kbd></span><span>approve &amp; next</span></li><li><span class=\"keys\"><kbd>r</kbd></span><span>reject</span></li><li><span class=\"keys\"><kbd>j</kbd></span><span>next diff</span></li><li><span class=\"keys\"><kbd>k</kbd></span><span>prev diff</span></li><li><span class=\"keys\"><kbd>esc</kbd></span><span>back to index</span></li></ul></div></aside>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -723,5 +736,12 @@ func onIf(b bool) string {
 }
 
 func splitPath(p string) []string { return strings.Split(p, "/") }
+
+func nextURL(id string) string {
+	if id == "" {
+		return "/"
+	}
+	return "/diff/" + id
+}
 
 var _ = templruntime.GeneratedTemplate

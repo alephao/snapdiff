@@ -91,9 +91,12 @@
     });
   }
 
-  // Verdict toggle (visual state only; the form actually posts)
+  // Verdict toggle. Approve auto-submits and advances to the next diff;
+  // reject only updates visual state because a comment is required, so the
+  // user finishes with ⌘↵ on the save button.
   const vApprove = $('#vApprove');
   const vReject  = $('#vReject');
+  const vForm    = $('form.rb-verdict');
   const vRadioApprove = $('input[name="status"][value="approved"]');
   const vRadioReject  = $('input[name="status"][value="rejected"]');
   function pick(which) {
@@ -102,11 +105,15 @@
     if (which === 'a' && vRadioApprove) vRadioApprove.checked = true;
     if (which === 'r' && vRadioReject)  vRadioReject.checked  = true;
   }
-  if (vApprove) vApprove.addEventListener('click', e => { e.preventDefault(); pick('a'); });
+  function approveAndAdvance() {
+    pick('a');
+    if (vForm) vForm.submit();
+  }
+  if (vApprove) vApprove.addEventListener('click', e => { e.preventDefault(); approveAndAdvance(); });
   if (vReject)  vReject.addEventListener('click', e => { e.preventDefault(); pick('r'); });
   document.addEventListener('keydown', e => {
     if (inField(e.target)) return;
-    if (e.key === 'a') pick('a');
+    if (e.key === 'a') approveAndAdvance();
     if (e.key === 'r') pick('r');
   });
 
