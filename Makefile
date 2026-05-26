@@ -55,13 +55,13 @@ clean:
 # Visual-regression screenshot suite (Playwright). Opt-in: requires Node
 # + chromium installed in tests-screenshots/. See docs/adr/0017-*.md.
 screenshots-install:
-	@cd tests-screenshots && npm install && npx --no-install playwright install chromium
+	@cd tests-screenshots && pnpm install && pnpm exec playwright install chromium
 
 screenshots:
-	@cd tests-screenshots && npx --no-install playwright test
+	@cd tests-screenshots && pnpm exec playwright test
 
 screenshots-update:
-	@cd tests-screenshots && npx --no-install playwright test --update-snapshots
+	@cd tests-screenshots && pnpm exec playwright test --update-snapshots
 
 # Cross-compile the matrix from a single host (CGO disabled).
 release: generate

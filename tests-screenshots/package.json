@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Playwright-driven visual-regression suite for the snapdiff web UI",
+  "packageManager": "pnpm@8.14.1",
   "scripts": {
     "test": "playwright test",
     "test:update": "playwright test --update-snapshots",

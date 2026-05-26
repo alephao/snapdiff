@@ -60,10 +60,10 @@ Per ADR-0017, the baselines are reviewed *with snapdiff itself*: there
 is a `snapdiff.toml` at the repo root pointing at
 `tests-screenshots/baselines/`.
 
-First-time setup (requires Node):
+First-time setup (requires Node + pnpm):
 
 ```sh
-make screenshots-install        # npm install + chromium browser
+make screenshots-install        # pnpm install + chromium browser
 ```
 
 Daily flow when you change CSS or templ views:
