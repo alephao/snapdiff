@@ -90,6 +90,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		Groups:    buildGroups(items),
 		Counts:    countItems(items),
 		RepoLabel: s.repoLabel,
+		NoAnim:    noAnim(r),
 	}
 	render(w, r, views.Index(d))
 }
@@ -122,6 +123,7 @@ func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 		Total:     len(items),
 		PrevID:    prev,
 		NextID:    next,
+		NoAnim:    noAnim(r),
 	}))
 }
 
@@ -256,6 +258,13 @@ func parseStatus(s string) (review.VerdictStatus, error) {
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = c.Render(r.Context(), w)
+}
+
+// noAnim reports whether the request opts into deterministic rendering
+// for screenshot tests (?noanim=1).
+func noAnim(r *http.Request) bool {
+	v := r.URL.Query().Get("noanim")
+	return v == "1" || v == "true"
 }
 
 // ---- shared computations ----

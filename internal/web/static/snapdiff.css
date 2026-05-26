@@ -1,6 +1,46 @@
 /* snapdiff — Terminal Forensics aesthetic.
    See docs/spec.md and mockups/ for the design direction. */
 
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/static/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("/static/fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("/static/fonts/JetBrainsMono-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url("/static/fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");
+}
+
+/* Screenshot-test mode: kill all animations and transitions for
+   deterministic captures. Toggled via ?noanim=1. */
+body.no-anim,
+body.no-anim *,
+body.no-anim *::before,
+body.no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+  caret-color: transparent !important;
+}
+
 :root {
   /* surfaces */
   --bg:        #0c0c0d;

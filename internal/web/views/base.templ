@@ -1,20 +1,24 @@
 package views
 
-templ Base(title string) {
+templ Base(title string, noAnim bool) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } — snapdiff</title>
-			<link rel="preconnect" href="https://fonts.googleapis.com"/>
-			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;400;500;600;800&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/static/snapdiff.css"/>
 		</head>
-		<body>
-			{ children... }
-			<script src="/static/snapdiff.js"></script>
-		</body>
+		if noAnim {
+			<body class="no-anim">
+				{ children... }
+				<script src="/static/snapdiff.js"></script>
+			</body>
+		} else {
+			<body>
+				{ children... }
+				<script src="/static/snapdiff.js"></script>
+			</body>
+		}
 	</html>
 }

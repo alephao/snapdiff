@@ -14,10 +14,11 @@ type DiffData struct {
 	Total     int    // total items
 	PrevID    string // empty if no prev
 	NextID    string // empty if no next
+	NoAnim    bool   // set by ?noanim=1 for deterministic screenshot tests
 }
 
 templ Diff(d DiffData) {
-	@Base(d.Item.Diff.Path) {
+	@Base(d.Item.Diff.Path, d.NoAnim) {
 		@diffTopbar(d)
 		@diffMeta(d)
 		@diffModes()

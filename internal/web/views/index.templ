@@ -13,6 +13,7 @@ type IndexData struct {
 	Groups    []ItemGroup             // grouped by leaf directory of Path
 	Counts    Counts
 	RepoLabel string                  // shown in the top bar (e.g. "ios-app/")
+	NoAnim    bool                    // set by ?noanim=1 for deterministic screenshot tests
 }
 
 type ItemGroup struct {
@@ -27,7 +28,7 @@ type Counts struct {
 }
 
 templ Index(d IndexData) {
-	@Base("Review") {
+	@Base("Review", d.NoAnim) {
 		@indexTopbar(d)
 		if len(d.Items) == 0 {
 			<section class="empty">
