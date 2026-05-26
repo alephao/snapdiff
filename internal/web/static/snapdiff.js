@@ -22,14 +22,11 @@
 
   // ---------- DIFF PAGE ----------
 
-  // Mode switcher
-  const modeBtns = $$('.mode-btn');
+  // Mode switcher (keyboard-driven; no visible mode bar)
   const panes = $$('.pane');
   function setMode(m) {
-    modeBtns.forEach(b => b.classList.toggle('is-active', b.dataset.mode === m));
     panes.forEach(p => p.classList.toggle('is-active', p.dataset.mode === m));
   }
-  modeBtns.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
   // Keyboard: 1-5 switch modes, esc back to index
   document.addEventListener('keydown', e => {

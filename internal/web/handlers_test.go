@@ -123,9 +123,9 @@ func TestDiffPage_rendersWithModes(t *testing.T) {
 		t.Fatalf("status = %d", w.Code)
 	}
 	body := w.Body.String()
-	for _, mode := range []string{"Side", "Swipe", "Toggle", "Pixel", "Onion"} {
-		if !strings.Contains(body, mode) {
-			t.Errorf("expected mode %q in body", mode)
+	for _, mode := range []string{"side", "swipe", "toggle", "pixel", "onion"} {
+		if !strings.Contains(body, `data-mode="`+mode+`"`) {
+			t.Errorf("expected pane data-mode=%q in body", mode)
 		}
 	}
 }

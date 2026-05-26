@@ -20,7 +20,6 @@ type DiffData struct {
 templ Diff(d DiffData) {
 	@Base(d.Item.Diff.Path, d.NoAnim) {
 		@diffTopbar(d)
-		@diffModes()
 		<main class="stage">
 			<div class="stage-inner">
 				@paneSide(d)
@@ -30,8 +29,7 @@ templ Diff(d DiffData) {
 				@paneOnion(d)
 			</div>
 		</main>
-		@keystripDiff()
-		@verdictDock(d)
+		@rightRail(d)
 	}
 }
 
@@ -58,23 +56,14 @@ templ diffTopbar(d DiffData) {
 }
 
 templ breadcrumbParts(path string) {
-	for i, p := range splitPath(path) {
-		if i == lastIdx(path) {
-			<span class="leaf">{ p }</span>
-		} else {
-			{ p }<span class="sep">/</span>
-		}
+	{{ parts := splitPath(path) }}
+	{{ n := len(parts) }}
+	if n >= 2 {
+		{ parts[n-2] }<span class="sep">/</span>
 	}
-}
-
-templ diffModes() {
-	<nav class="modes">
-		<button type="button" class="mode-btn is-active" data-mode="side"><span class="num">1</span>Side by side</button>
-		<button type="button" class="mode-btn" data-mode="swipe"><span class="num">2</span>Swipe</button>
-		<button type="button" class="mode-btn" data-mode="toggle"><span class="num">3</span>Toggle</button>
-		<button type="button" class="mode-btn" data-mode="pixel"><span class="num">4</span>Pixel diff</button>
-		<button type="button" class="mode-btn" data-mode="onion"><span class="num">5</span>Onion</button>
-	</nav>
+	if n >= 1 {
+		<span class="leaf">{ parts[n-1] }</span>
+	}
 }
 
 templ paneSide(d DiffData) {
@@ -159,26 +148,32 @@ templ paneOnion(d DiffData) {
 	</section>
 }
 
-templ keystripDiff() {
-	<div class="keystrip">
-		<div class="row-key"><kbd>1</kbd>–<kbd>5</kbd> change mode</div>
-		<div class="row-key"><kbd>a</kbd> approve · <kbd>r</kbd> reject</div>
-		<div class="row-key"><kbd>j</kbd> next · <kbd>k</kbd> prev</div>
-		<div class="row-key"><kbd>esc</kbd> back to index</div>
-	</div>
-}
-
-templ verdictDock(d DiffData) {
-	<form class="verdict-dock verdict-form" method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
-		<div class="v-toggle">
-			<button type="button" class={ "v-opt is-approve" + onIf(d.Item.Verdict.Status == review.StatusApproved) } id="vApprove">✓ approve <span class="kbd">a</span></button>
-			<button type="button" class={ "v-opt is-reject"  + onIf(d.Item.Verdict.Status == review.StatusRejected) } id="vReject">✕ reject <span class="kbd">r</span></button>
+templ rightRail(d DiffData) {
+	<aside class="rightbar">
+		<form class="rb-section rb-verdict" method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
+			<span class="rb-label">verdict</span>
+			<div class="v-toggle">
+				<button type="button" class={ "v-opt is-approve" + onIf(d.Item.Verdict.Status == review.StatusApproved) } id="vApprove">✓ approve <span class="kbd">a</span></button>
+				<button type="button" class={ "v-opt is-reject"  + onIf(d.Item.Verdict.Status == review.StatusRejected) } id="vReject">✕ reject <span class="kbd">r</span></button>
+			</div>
+			<input type="radio" name="status" value="approved" style="display:none" checked?={ d.Item.Verdict.Status != review.StatusRejected }/>
+			<input type="radio" name="status" value="rejected" style="display:none" checked?={ d.Item.Verdict.Status == review.StatusRejected }/>
+			<textarea class="v-comment" name="comment" rows="4" placeholder="why? (required for reject — quote the offending region if useful)">{ d.Item.Verdict.Comment }</textarea>
+			<button type="submit" class="v-save">save verdict <span class="hint">⌘↵</span></button>
+		</form>
+		<div class="rb-spacer"></div>
+		<div class="rb-section rb-shortcuts">
+			<span class="rb-label">shortcuts</span>
+			<ul>
+				<li><span class="keys"><kbd>1</kbd><span class="sep-key">–</span><kbd>5</kbd></span><span>change mode</span></li>
+				<li><span class="keys"><kbd>a</kbd></span><span>approve</span></li>
+				<li><span class="keys"><kbd>r</kbd></span><span>reject</span></li>
+				<li><span class="keys"><kbd>j</kbd></span><span>next diff</span></li>
+				<li><span class="keys"><kbd>k</kbd></span><span>prev diff</span></li>
+				<li><span class="keys"><kbd>esc</kbd></span><span>back to index</span></li>
+			</ul>
 		</div>
-		<input type="radio" name="status" value="approved" style="display:none" checked?={ d.Item.Verdict.Status != review.StatusRejected }/>
-		<input type="radio" name="status" value="rejected" style="display:none" checked?={ d.Item.Verdict.Status == review.StatusRejected }/>
-		<input class="v-comment" type="text" name="comment" value={ d.Item.Verdict.Comment } placeholder="why? (required for reject — quote the offending region if useful)"/>
-		<button type="submit" class="v-save">save verdict <span style="opacity:.5; margin-left:6px">⌘↵</span></button>
-	</form>
+	</aside>
 }
 
 // ---- helpers ----
@@ -191,5 +186,3 @@ func onIf(b bool) string {
 }
 
 func splitPath(p string) []string { return strings.Split(p, "/") }
-
-func lastIdx(p string) int { return len(strings.Split(p, "/")) - 1 }
