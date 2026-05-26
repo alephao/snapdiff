@@ -1,92 +1,233 @@
 package views
 
-import "github.com/alephao/snapdiff/internal/review"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/alephao/snapdiff/internal/review"
+)
 
 type DiffData struct {
 	Item      *review.Item
 	AxisNames []string
+	Position  int    // 1-based position among all items
+	Total     int    // total items
+	PrevID    string // empty if no prev
+	NextID    string // empty if no next
 }
 
 templ Diff(d DiffData) {
 	@Base(d.Item.Diff.Path) {
-		<section class="diff-meta">
-			<p><a href="/">&larr; back to index</a></p>
-			<dl>
-				<dt>Path</dt><dd>{ d.Item.Diff.Path }</dd>
-				<dt>Status</dt><dd>{ d.Item.Diff.Status.String() }</dd>
-				for _, name := range d.AxisNames {
-					<dt>{ name }</dt><dd>{ d.Item.Diff.Axes[name] }</dd>
-				}
-				<dt>Verdict</dt><dd class={ "verdict-" + d.Item.Verdict.Status.String() }>{ d.Item.Verdict.Status.String() }</dd>
-				if d.Item.Verdict.Comment != "" {
-					<dt>Comment</dt><dd>{ d.Item.Verdict.Comment }</dd>
-				}
-			</dl>
-		</section>
-
-		<section class="mode-switcher" data-diff-id={ d.Item.ID }>
-			<button type="button" data-mode="side"  class="mode-btn active">Side</button>
-			<button type="button" data-mode="swipe" class="mode-btn">Swipe</button>
-			<button type="button" data-mode="toggle" class="mode-btn">Toggle</button>
-			<button type="button" data-mode="pixel" class="mode-btn">Pixel</button>
-			<button type="button" data-mode="onion" class="mode-btn">Onion</button>
-		</section>
-
-		<section class="diff-viewer">
-			<div class="mode-pane mode-side" data-mode="side">
-				<figure>
-					<figcaption>baseline</figcaption>
-					<img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
-				</figure>
-				<figure>
-					<figcaption>current</figcaption>
-					<img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/>
-				</figure>
+		@diffTopbar(d)
+		@diffMeta(d)
+		@diffModes()
+		<main class="stage">
+			<div class="stage-inner">
+				@paneSide(d)
+				@paneSwipe(d)
+				@paneToggle(d)
+				@panePixel(d)
+				@paneOnion(d)
 			</div>
-
-			<div class="mode-pane mode-swipe" data-mode="swipe" hidden>
-				<div class="swipe-container">
-					<img class="swipe-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
-					<img class="swipe-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/>
-				</div>
-				<input class="swipe-slider" type="range" min="0" max="100" value="50"/>
-			</div>
-
-			<div class="mode-pane mode-toggle" data-mode="toggle" hidden>
-				<div class="toggle-container">
-					<img class="toggle-img toggle-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
-					<img class="toggle-img toggle-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current" hidden/>
-				</div>
-				<p class="toggle-help">Hold <kbd>T</kbd> to flip; click to toggle.</p>
-			</div>
-
-			<div class="mode-pane mode-pixel" data-mode="pixel" hidden>
-				<img src={ "/diff/" + d.Item.ID + "/pixeldiff.png" } alt="pixel diff"/>
-			</div>
-
-			<div class="mode-pane mode-onion" data-mode="onion" hidden>
-				<div class="onion-container">
-					<img class="onion-baseline" src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/>
-					<img class="onion-current"  src={ "/diff/" + d.Item.ID + "/current.png" } alt="current" style="opacity:0.5"/>
-				</div>
-				<input class="onion-slider" type="range" min="0" max="100" value="50"/>
-				<p class="onion-help">opacity of <em>current</em> on top of baseline</p>
-			</div>
-		</section>
-
-		<section class="verdict-form">
-			<form method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
-				<fieldset>
-					<legend>Verdict</legend>
-					<label><input type="radio" name="status" value="approved" checked/> Approve</label>
-					<label><input type="radio" name="status" value="rejected"/> Reject</label>
-					<label>
-						Comment
-						<input type="text" name="comment" value={ d.Item.Verdict.Comment } placeholder="(required if rejecting)"/>
-					</label>
-				</fieldset>
-				<button type="submit">Save verdict</button>
-			</form>
-		</section>
+		</main>
+		@keystripDiff()
+		@verdictDock(d)
 	}
 }
+
+templ diffTopbar(d DiffData) {
+	<header class="dt-topbar">
+		<a class="back" href="/"><span class="arrow">←</span> all diffs</a>
+		<div class="breadcrumb">
+			@breadcrumbParts(d.Item.Diff.Path)
+		</div>
+		<div class="nav-prev-next">
+			if d.PrevID != "" {
+				<a class="nbtn nav-prev" href={ templ.URL("/diff/" + d.PrevID) }><kbd>k</kbd> prev</a>
+			} else {
+				<span class="nbtn nav-prev disabled"><kbd>k</kbd> prev</span>
+			}
+			<span class="nbtn"><span class="pos">{ fmt.Sprintf("%d / %d", d.Position, d.Total) }</span></span>
+			if d.NextID != "" {
+				<a class="nbtn nav-next" href={ templ.URL("/diff/" + d.NextID) }>next <kbd>j</kbd></a>
+			} else {
+				<span class="nbtn nav-next disabled">next <kbd>j</kbd></span>
+			}
+		</div>
+	</header>
+}
+
+templ breadcrumbParts(path string) {
+	for i, p := range splitPath(path) {
+		if i == lastIdx(path) {
+			<span class="leaf">{ p }</span>
+		} else {
+			{ p }<span class="sep">/</span>
+		}
+	}
+}
+
+templ diffMeta(d DiffData) {
+	<section class="meta">
+		<div class="path">
+			<span class={ "status-tag is-" + d.Item.Diff.Status.String() }>{ statusLetter(d.Item.Diff.Status.String()) }</span>
+			<span class="lead">{ leadDir(d.Item.Diff.Path) }</span>{ baseName(d.Item.Diff.Path) }
+		</div>
+		<div class="axes-inline">
+			for _, name := range d.AxisNames {
+				if v, ok := d.Item.Diff.Axes[name]; ok && v != "" {
+					<span class="ax"><span class="k">{ name + ":" }</span><span class="v">{ v }</span></span>
+				}
+			}
+		</div>
+		<div class={ "verdict-current is-" + d.Item.Verdict.Status.String() }>{ d.Item.Verdict.Status.String() }</div>
+	</section>
+}
+
+templ diffModes() {
+	<nav class="modes">
+		<button type="button" class="mode-btn is-active" data-mode="side"><span class="num">1</span>Side by side</button>
+		<button type="button" class="mode-btn" data-mode="swipe"><span class="num">2</span>Swipe</button>
+		<button type="button" class="mode-btn" data-mode="toggle"><span class="num">3</span>Toggle</button>
+		<button type="button" class="mode-btn" data-mode="pixel"><span class="num">4</span>Pixel diff</button>
+		<button type="button" class="mode-btn" data-mode="onion"><span class="num">5</span>Onion</button>
+	</nav>
+}
+
+templ paneSide(d DiffData) {
+	<section class="pane pane-side is-active" data-mode="side">
+		if d.Item.Diff.Status.String() != "added" {
+			<div class="col">
+				<div class="phone-frame"><img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/></div>
+				<div class="phone-label"><span class="h">BASELINE</span> · HEAD</div>
+			</div>
+		}
+		if d.Item.Diff.Status.String() != "deleted" {
+			<div class="col">
+				<div class="phone-frame"><img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/></div>
+				<div class="phone-label"><span class="h">CURRENT</span> · working tree</div>
+			</div>
+		}
+	</section>
+}
+
+templ paneSwipe(d DiffData) {
+	<section class="pane pane-swipe" data-mode="swipe">
+		if d.Item.Diff.Status.String() == "modified" {
+			<div class="swipe-wrap">
+				<div class="phone-frame below"><img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/></div>
+				<div class="phone-frame above" id="swipeAbove"><img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/></div>
+				<div class="splitter" id="swipeSplit"></div>
+			</div>
+			<div class="swipe-control">
+				<span class="lbl">baseline</span>
+				<input class="swipe-slider" id="swipeSlider" type="range" min="0" max="100" value="50"/>
+				<span class="lbl">current</span>
+			</div>
+		} else {
+			<p style="color:var(--fg-muted);text-align:center;padding:40px">Swipe is only available for modified snapshots.</p>
+		}
+	</section>
+}
+
+templ paneToggle(d DiffData) {
+	<section class="pane pane-toggle" data-mode="toggle">
+		if d.Item.Diff.Status.String() == "modified" {
+			<div class="toggle-wrap" id="toggleWrap">
+				<div class="phone-frame below"><img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/></div>
+				<div class="phone-frame above"><img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/></div>
+			</div>
+			<div class="toggle-help">
+				<span>showing <span class="current-tag" id="toggleLabel">baseline</span></span>
+				<span>· hold <kbd>T</kbd> to flip · click to lock</span>
+			</div>
+		} else {
+			<p style="color:var(--fg-muted);text-align:center;padding:40px">Toggle is only available for modified snapshots.</p>
+		}
+	</section>
+}
+
+templ panePixel(d DiffData) {
+	<section class="pane pane-pixel" data-mode="pixel">
+		<div class="pixel-wrap">
+			<div class="phone-frame"><img src={ "/diff/" + d.Item.ID + "/pixeldiff.png" } alt="pixel diff"/></div>
+		</div>
+		<div class="pixel-legend">
+			<span><span class="sw"></span> changed pixels (server-computed)</span>
+		</div>
+	</section>
+}
+
+templ paneOnion(d DiffData) {
+	<section class="pane pane-onion" data-mode="onion">
+		if d.Item.Diff.Status.String() == "modified" {
+			<div class="onion-wrap" id="onionWrap">
+				<div class="phone-frame below"><img src={ "/diff/" + d.Item.ID + "/baseline.png" } alt="baseline"/></div>
+				<div class="phone-frame above" id="onionAbove" style="opacity:0.5"><img src={ "/diff/" + d.Item.ID + "/current.png" } alt="current"/></div>
+			</div>
+			<div class="onion-control">
+				<span class="lbl" style="color:var(--info)">baseline</span>
+				<input class="onion-slider" id="onionSlider" type="range" min="0" max="100" value="50"/>
+				<span class="lbl" style="color:var(--accent)">current</span>
+			</div>
+		} else {
+			<p style="color:var(--fg-muted);text-align:center;padding:40px">Onion is only available for modified snapshots.</p>
+		}
+	</section>
+}
+
+templ keystripDiff() {
+	<div class="keystrip">
+		<div class="row-key"><kbd>1</kbd>–<kbd>5</kbd> change mode</div>
+		<div class="row-key"><kbd>a</kbd> approve · <kbd>r</kbd> reject</div>
+		<div class="row-key"><kbd>j</kbd> next · <kbd>k</kbd> prev</div>
+		<div class="row-key"><kbd>esc</kbd> back to index</div>
+	</div>
+}
+
+templ verdictDock(d DiffData) {
+	<form class="verdict-dock verdict-form" method="post" action={ templ.URL("/diff/" + d.Item.ID + "/verdict") }>
+		<div class="v-toggle">
+			<button type="button" class={ "v-opt is-approve" + onIf(d.Item.Verdict.Status == review.StatusApproved) } id="vApprove">✓ approve <span class="kbd">a</span></button>
+			<button type="button" class={ "v-opt is-reject"  + onIf(d.Item.Verdict.Status == review.StatusRejected) } id="vReject">✕ reject <span class="kbd">r</span></button>
+		</div>
+		<input type="radio" name="status" value="approved" style="display:none" checked?={ d.Item.Verdict.Status != review.StatusRejected }/>
+		<input type="radio" name="status" value="rejected" style="display:none" checked?={ d.Item.Verdict.Status == review.StatusRejected }/>
+		<input class="v-comment" type="text" name="comment" value={ d.Item.Verdict.Comment } placeholder="why? (required for reject — quote the offending region if useful)"/>
+		<button type="submit" class="v-save">save verdict <span style="opacity:.5; margin-left:6px">⌘↵</span></button>
+	</form>
+}
+
+// ---- helpers ----
+
+func statusLetter(s string) string {
+	switch s {
+	case "added":
+		return "A"
+	case "modified":
+		return "M"
+	case "deleted":
+		return "D"
+	}
+	return "?"
+}
+
+func leadDir(path string) string {
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '/' {
+			return path[:i+1]
+		}
+	}
+	return ""
+}
+
+func onIf(b bool) string {
+	if b {
+		return " is-on"
+	}
+	return ""
+}
+
+func splitPath(p string) []string { return strings.Split(p, "/") }
+
+func lastIdx(p string) int { return len(strings.Split(p, "/")) - 1 }

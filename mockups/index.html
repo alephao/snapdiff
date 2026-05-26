@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>snapdiff — review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* surfaces */
+    --bg:        #0c0c0d;
+    --surface:   #15151a;
+    --raised:    #1c1c22;
+    --elevated:  #24242c;
+
+    /* lines */
+    --hairline:  #25252e;
+    --divider:   #2f2f3a;
+    --emphasis:  #43434f;
+
+    /* ink */
+    --fg-dim:    #58585f;
+    --fg-muted:  #87878f;
+    --fg:        #c8c8d2;
+    --fg-bright: #f5f5fa;
+
+    /* status (warm earth — pending/approved/rejected) */
+    --pending:   #d9a847;
+    --approved:  #7eb87b;
+    --rejected:  #d97757;
+    --info:      #8eb6d6;
+    --accent:    #d9a847;
+
+    --shadow-1:  0 1px 0 rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-ligatures: none;
+  }
+
+  ::selection { background: var(--accent); color: #1a1004; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--emphasis); }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ============== TOP BAR ============== */
+
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .brand {
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 14px 18px;
+    border-right: 1px solid var(--hairline);
+  }
+  .brand .mark {
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    color: var(--fg-bright);
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+  .brand .mark::before {
+    content: "▰";
+    color: var(--accent);
+    margin-right: 8px;
+    font-size: 11px;
+    vertical-align: 2px;
+  }
+  .brand .repo {
+    color: var(--fg-muted);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .brand .repo .sep { color: var(--fg-dim); margin: 0 6px; }
+
+  .counter-strip {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    border-left: 1px solid var(--hairline);
+  }
+  .counter {
+    padding: 14px 16px;
+    display: flex; align-items: baseline; gap: 8px;
+    border-left: 1px solid var(--hairline);
+  }
+  .counter:first-child { border-left: 0; }
+  .counter .n {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg-bright);
+    font-variant-numeric: tabular-nums;
+    min-width: 2ch;
+    text-align: right;
+  }
+  .counter .l {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--fg-muted);
+  }
+  .counter.is-pending .n  { color: var(--pending); }
+  .counter.is-approved .n { color: var(--approved); }
+  .counter.is-rejected .n { color: var(--rejected); }
+
+  .session-meta {
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 18px;
+    color: var(--fg-dim);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+  .session-meta .blink {
+    color: var(--accent);
+    animation: blink 1.4s steps(2, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ============== FILTER STRIP ============== */
+
+  .filterbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .filter-label {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .axes {
+    display: flex; flex-wrap: wrap; gap: 6px 14px;
+    align-items: center;
+  }
+  .axis {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .axis .name {
+    font-size: 10px;
+    color: var(--fg-muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .axis .name::after { content: ":"; color: var(--fg-dim); margin-left: 2px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px 3px 7px;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--fg-muted);
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+  }
+  .chip:hover { color: var(--fg); border-color: var(--emphasis); }
+  .chip.is-active {
+    background: var(--elevated);
+    border-color: var(--emphasis);
+    color: var(--fg-bright);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .chip .x {
+    color: var(--fg-dim);
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 100ms ease;
+  }
+  .chip.is-active .x { opacity: 1; color: var(--accent); }
+  .chip .swatch {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--fg-dim);
+  }
+
+  .clear-all {
+    background: transparent; border: 0; cursor: pointer;
+    font-family: inherit;
+    color: var(--fg-dim);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 4px 6px;
+    border-left: 1px solid var(--hairline);
+    margin-left: 8px;
+  }
+  .clear-all:hover { color: var(--rejected); }
+
+  /* ============== BULK ACTION BAR ============== */
+
+  .bulkbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 18px;
+    background: var(--raised);
+    border-bottom: 1px solid var(--hairline);
+    color: var(--fg);
+  }
+  .bulkbar .match-count {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .bulkbar .match-count strong {
+    color: var(--accent);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .bulk-input {
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 100ms ease;
+  }
+  .bulk-input::placeholder { color: var(--fg-dim); }
+  .bulk-input:focus { border-color: var(--accent); }
+
+  .bulk-actions { display: flex; gap: 6px; }
+  .btn {
+    border: 1px solid var(--hairline);
+    background: var(--bg);
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 8px 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 100ms ease, color 100ms ease, background 100ms ease;
+  }
+  .btn:hover { border-color: var(--emphasis); color: var(--fg-bright); }
+  .btn.btn-approve:hover { border-color: var(--approved); color: var(--approved); }
+  .btn.btn-reject:hover  { border-color: var(--rejected); color: var(--rejected); }
+
+  /* ============== TABLE ============== */
+
+  .table-wrap { padding: 0 0 80px; }
+
+  .group {
+    border-bottom: 1px solid var(--hairline);
+  }
+  .group-head {
+    display: grid;
+    grid-template-columns: 28px auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 18px 10px 18px;
+    background: var(--surface);
+    cursor: pointer;
+    color: var(--fg-muted);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    user-select: none;
+    border-top: 1px solid var(--divider);
+  }
+  .group-head:hover { color: var(--fg-bright); }
+  .group-head .caret {
+    color: var(--fg-dim);
+    transition: transform 120ms ease;
+  }
+  .group.is-collapsed .caret { transform: rotate(-90deg); }
+  .group-head .ttl {
+    color: var(--fg-bright);
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+  .group-head .ttl .ns {
+    color: var(--fg-dim);
+    margin-right: 4px;
+  }
+  .group-head .stats {
+    display: flex; gap: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .group-head .stats span { display: inline-flex; align-items: center; gap: 4px; }
+  .group-head .stats .dot {
+    width: 6px; height: 6px;
+    background: var(--fg-dim);
+  }
+  .stats .dot-p { background: var(--pending); }
+  .stats .dot-a { background: var(--approved); }
+  .stats .dot-r { background: var(--rejected); }
+
+  .rows {
+    background: var(--bg);
+  }
+  .group.is-collapsed .rows { display: none; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 24px 32px 1.6fr repeat(3, minmax(80px, auto)) 32px 90px;
+    gap: 14px;
+    align-items: center;
+    padding: 8px 18px 8px 24px;
+    border-top: 1px solid var(--hairline);
+    cursor: pointer;
+    color: var(--fg);
+    text-decoration: none;
+    position: relative;
+    transition: background 80ms ease;
+  }
+  .row::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: transparent;
+    transition: background 80ms ease;
+  }
+  .row:hover { background: var(--surface); color: var(--fg-bright); }
+  .row:hover::before { background: var(--accent); }
+  .row.is-approved::before { background: var(--approved); opacity: 0.6; }
+  .row.is-rejected::before { background: var(--rejected); opacity: 0.6; }
+
+  .row .glyph {
+    text-align: center;
+    font-size: 12px;
+    color: var(--pending);
+  }
+  .row.is-approved .glyph { color: var(--approved); }
+  .row.is-rejected .glyph { color: var(--rejected); }
+  .row.is-added    .file-tag::before { content: "A"; color: var(--approved); }
+  .row.is-modified .file-tag::before { content: "M"; color: var(--info); }
+  .row.is-deleted  .file-tag::before { content: "D"; color: var(--rejected); }
+  .row .file-tag {
+    width: 22px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .row .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12.5px;
+  }
+  .row .name .testname {
+    color: var(--fg-bright);
+    font-weight: 500;
+  }
+  .row .name .tcls {
+    color: var(--fg-dim);
+    margin-right: 8px;
+    font-size: 11.5px;
+  }
+  .row .name .tcls::after { content: " ›"; color: var(--fg-dim); margin-left: 6px; }
+  .row .axval {
+    color: var(--fg-muted);
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+  }
+  .row .axval.theme-dark::before  { content: "◐ "; color: var(--info); }
+  .row .axval.theme-light::before { content: "◑ "; color: var(--pending); }
+  .row .axval.lang::before { content: ""; }
+  .row .axval.lang code {
+    font-size: 10px;
+    color: var(--fg-dim);
+    margin-right: 3px;
+  }
+
+  .thumb {
+    width: 26px; height: 26px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    position: relative;
+    overflow: hidden;
+  }
+  .thumb svg { width: 100%; height: 100%; display: block; }
+
+  .verdict-tag {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--pending);
+  }
+  .row.is-approved .verdict-tag { color: var(--approved); }
+  .row.is-rejected .verdict-tag { color: var(--rejected); }
+
+  /* ============== FOOTER FINALIZE ============== */
+
+  .finalize-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-top: 1px solid var(--divider);
+    box-shadow: var(--shadow-1);
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-track .segment {
+    position: absolute; top: 0; bottom: 0;
+  }
+  .seg-a { left: 0;    width: 25%; background: var(--approved); }
+  .seg-r { left: 25%;  width: 12.5%; background: var(--rejected); }
+  .seg-p { right: 0;   width: 62.5%; background: repeating-linear-gradient(45deg, var(--pending) 0 4px, transparent 4px 8px); opacity: 0.55; }
+
+  .progress-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex; gap: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-label .v-a { color: var(--approved); }
+  .progress-label .v-r { color: var(--rejected); }
+  .progress-label .v-p { color: var(--pending); }
+
+  .finalize {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 18px;
+    border: 1px solid var(--emphasis);
+    background: var(--bg);
+    color: var(--fg-dim);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: not-allowed;
+    transition: all 120ms ease;
+  }
+  .finalize.is-ready {
+    background: var(--accent);
+    color: #1a1004;
+    border-color: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  .finalize.is-ready:hover {
+    box-shadow: 0 0 0 4px rgba(217, 168, 71, 0.18);
+  }
+  .finalize .kbd {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 1px 5px;
+    font-size: 9px;
+    margin-left: 2px;
+    letter-spacing: 0.04em;
+  }
+  .finalize.is-ready .kbd { background: rgba(0,0,0,0.18); border-color: rgba(0,0,0,0.25); color: #1a1004;}
+
+  /* ============== HELP STRIP (keys) ============== */
+
+  .keystrip {
+    position: fixed; right: 14px; bottom: 64px;
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 10px;
+    color: var(--fg-dim);
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .keystrip .row-key {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .keystrip kbd {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    padding: 1px 5px;
+    font-size: 9.5px;
+    color: var(--fg-muted);
+    font-family: inherit;
+    letter-spacing: 0.04em;
+  }
+
+  /* ============== RESPONSIVE ============== */
+
+  @media (max-width: 880px) {
+    .row {
+      grid-template-columns: 18px 28px 1fr 1fr;
+      gap: 10px;
+      padding: 10px 14px 10px 18px;
+    }
+    .row .name { grid-column: 1 / -1; grid-row: 1; }
+    .row .file-tag { grid-row: 2; }
+    .row .glyph { grid-row: 2; }
+    .row .axval { grid-row: 2; font-size: 11px; }
+    .row .thumb, .row .verdict-tag {
+      grid-row: 2; justify-self: end;
+    }
+    .filterbar {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .topbar { grid-template-columns: 1fr; }
+    .brand { border-right: 0; border-bottom: 1px solid var(--hairline); padding: 10px 14px; }
+    .counter-strip { justify-content: flex-start; border-left: 0; }
+    .session-meta { display: none; }
+    .keystrip { display: none; }
+    .bulkbar { grid-template-columns: 1fr; }
+    .bulk-actions { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== TOP BAR ==================== -->
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">snapdiff</span>
+    <span class="repo">
+      ios-app<span class="sep">/</span>app-modules<span class="sep">/</span><span style="color:var(--fg-muted)">Tests</span>
+    </span>
+  </div>
+  <div class="session-meta">
+    <span class="blink">●</span> awaiting reviewer · base ref <code style="color:var(--info)">HEAD</code> · 2 of 24 frameworks · agent loop #4
+  </div>
+  <div class="counter-strip">
+    <div class="counter"><span class="n">24</span><span class="l">diffs</span></div>
+    <div class="counter is-approved"><span class="n">6</span><span class="l">approved</span></div>
+    <div class="counter is-rejected"><span class="n">3</span><span class="l">rejected</span></div>
+    <div class="counter is-pending"><span class="n">15</span><span class="l">pending</span></div>
+  </div>
+</header>
+
+<!-- ==================== FILTER STRIP ==================== -->
+<section class="filterbar" id="filterbar">
+  <span class="filter-label">filter</span>
+  <div class="axes">
+    <div class="axis">
+      <span class="name">testClass</span>
+      <button class="chip" data-axis="testClass" data-val="AddGroupFormViewTests">AddGroupFormViewTests <span class="x">✕</span></button>
+      <button class="chip" data-axis="testClass" data-val="AuthFeatureTests">AuthFeatureTests <span class="x">✕</span></button>
+      <button class="chip" data-axis="testClass" data-val="ProfileViewTests">ProfileViewTests <span class="x">✕</span></button>
+      <button class="chip" data-axis="testClass" data-val="SignInViewTests">SignInViewTests <span class="x">✕</span></button>
+      <button class="chip" data-axis="testClass" data-val="GroupListViewTests">GroupListViewTests <span class="x">✕</span></button>
+    </div>
+    <div class="axis">
+      <span class="name">theme</span>
+      <button class="chip is-active" data-axis="theme" data-val="dark">dark <span class="x">✕</span></button>
+      <button class="chip" data-axis="theme" data-val="light">light <span class="x">✕</span></button>
+    </div>
+    <div class="axis">
+      <span class="name">lang</span>
+      <button class="chip" data-axis="lang" data-val="en">en <span class="x">✕</span></button>
+      <button class="chip" data-axis="lang" data-val="pt-BR">pt-BR <span class="x">✕</span></button>
+    </div>
+  </div>
+  <button class="clear-all">clear filters ✕</button>
+</section>
+
+<!-- ==================== BULK ACTIONS ==================== -->
+<section class="bulkbar">
+  <span class="match-count"><strong>12</strong> matching · theme=dark</span>
+  <input class="bulk-input" placeholder="comment for bulk rejection — optional…" />
+  <div class="bulk-actions">
+    <button class="btn btn-approve">✓ approve all</button>
+    <button class="btn btn-reject">✕ reject all</button>
+  </div>
+</section>
+
+<!-- ==================== TABLE ==================== -->
+<main class="table-wrap">
+
+  <!-- group: AddGroupFormViewTests -->
+  <section class="group">
+    <header class="group-head">
+      <span class="caret">▾</span>
+      <span class="ttl"><span class="ns">app-modules/Tests/AddGroupFeatureTests/__Snapshots__/</span>AddGroupFormViewTests</span>
+      <span></span>
+      <span class="stats">
+        <span><span class="dot dot-p"></span> 4</span>
+        <span><span class="dot dot-a"></span> 2</span>
+        <span><span class="dot dot-r"></span> 2</span>
+      </span>
+    </header>
+    <div class="rows">
+
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedIn</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111" /><rect x="3" y="4" width="20" height="2" fill="#444"/><rect x="3" y="8" width="14" height="2" fill="#333"/><rect x="3" y="12" width="20" height="3" fill="#1f2937"/><rect x="3" y="17" width="20" height="3" fill="#1f2937"/></svg>
+        </span>
+        <span class="verdict-tag">pending</span>
+      </a>
+
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedIn</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111" /><rect x="3" y="4" width="20" height="2" fill="#444"/><rect x="3" y="8" width="16" height="2" fill="#333"/><rect x="3" y="12" width="20" height="3" fill="#1f2937"/><rect x="3" y="17" width="20" height="3" fill="#1f2937"/></svg>
+        </span>
+        <span class="verdict-tag">pending</span>
+      </a>
+
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedIn</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa" /><rect x="3" y="4" width="20" height="2" fill="#bbb"/><rect x="3" y="8" width="14" height="2" fill="#ccc"/><rect x="3" y="12" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="17" width="20" height="3" fill="#e5e7eb"/></svg>
+        </span>
+        <span class="verdict-tag">approved</span>
+      </a>
+
+      <a class="row is-modified is-rejected" href="diff.html">
+        <span class="glyph">✕</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedIn</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa" /><rect x="3" y="4" width="20" height="2" fill="#bbb"/><rect x="3" y="8" width="16" height="2" fill="#ccc"/><rect x="3" y="12" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="17" width="20" height="3" fill="#e5e7eb"/></svg>
+        </span>
+        <span class="verdict-tag">rejected</span>
+      </a>
+
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedInExcluded</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111" /><rect x="3" y="4" width="20" height="2" fill="#444"/><rect x="3" y="8" width="20" height="3" fill="#1f2937"/><rect x="3" y="13" width="20" height="3" fill="#1f2937"/><rect x="3" y="18" width="20" height="3" fill="#7eb87b" opacity=".7"/></svg>
+        </span>
+        <span class="verdict-tag">pending</span>
+      </a>
+
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedInExcluded</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111" /><rect x="3" y="4" width="20" height="2" fill="#444"/><rect x="3" y="8" width="20" height="3" fill="#1f2937"/><rect x="3" y="13" width="20" height="3" fill="#1f2937"/><rect x="3" y="18" width="20" height="3" fill="#7eb87b" opacity=".7"/></svg>
+        </span>
+        <span class="verdict-tag">pending</span>
+      </a>
+
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedInExcluded</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa" /><rect x="3" y="4" width="20" height="2" fill="#bbb"/><rect x="3" y="8" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="13" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="18" width="20" height="3" fill="#7eb87b" opacity=".5"/></svg>
+        </span>
+        <span class="verdict-tag">approved</span>
+      </a>
+
+      <a class="row is-modified is-rejected" href="diff.html">
+        <span class="glyph">✕</span>
+        <span class="file-tag"></span>
+        <span class="name"><span class="tcls">AddGroupFormViewTests</span><span class="testname">formViewSignedInExcluded</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span>
+        <span class="axval"></span>
+        <span class="thumb">
+          <svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa" /><rect x="3" y="4" width="20" height="2" fill="#bbb"/><rect x="3" y="8" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="13" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="18" width="20" height="3" fill="#7eb87b" opacity=".5"/></svg>
+        </span>
+        <span class="verdict-tag">rejected</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- group: AuthFeatureTests / ProfileViewTests -->
+  <section class="group">
+    <header class="group-head">
+      <span class="caret">▾</span>
+      <span class="ttl"><span class="ns">app-modules/Tests/AuthFeatureTests/__Snapshots__/</span>ProfileViewTests</span>
+      <span></span>
+      <span class="stats">
+        <span><span class="dot dot-p"></span> 4</span>
+        <span><span class="dot dot-a"></span> 0</span>
+        <span><span class="dot dot-r"></span> 0</span>
+      </span>
+    </header>
+    <div class="rows">
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">ProfileViewTests</span><span class="testname">profileSheet</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><circle cx="13" cy="9" r="4" fill="#1f2937"/><rect x="4" y="16" width="18" height="2" fill="#374151"/><rect x="4" y="20" width="18" height="2" fill="#1f2937"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">ProfileViewTests</span><span class="testname">profileSheet</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><circle cx="13" cy="9" r="4" fill="#1f2937"/><rect x="4" y="16" width="18" height="2" fill="#374151"/><rect x="4" y="20" width="18" height="2" fill="#1f2937"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">ProfileViewTests</span><span class="testname">profileSheet</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><circle cx="13" cy="9" r="4" fill="#e5e7eb"/><rect x="4" y="16" width="18" height="2" fill="#d1d5db"/><rect x="4" y="20" width="18" height="2" fill="#e5e7eb"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">ProfileViewTests</span><span class="testname">profileSheet</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><circle cx="13" cy="9" r="4" fill="#e5e7eb"/><rect x="4" y="16" width="18" height="2" fill="#d1d5db"/><rect x="4" y="20" width="18" height="2" fill="#e5e7eb"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- group: SignInViewTests / signInSheet -->
+  <section class="group">
+    <header class="group-head">
+      <span class="caret">▾</span>
+      <span class="ttl"><span class="ns">app-modules/Tests/AuthFeatureTests/__Snapshots__/</span>SignInViewTests</span>
+      <span></span>
+      <span class="stats">
+        <span><span class="dot dot-p"></span> 7</span>
+        <span><span class="dot dot-a"></span> 1</span>
+        <span><span class="dot dot-r"></span> 0</span>
+      </span>
+    </header>
+    <div class="rows">
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheet</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="4" y="5" width="18" height="3" fill="#1f2937"/><rect x="4" y="11" width="18" height="3" fill="#1f2937"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheet</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="4" y="5" width="18" height="3" fill="#1f2937"/><rect x="4" y="11" width="18" height="3" fill="#1f2937"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheet</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="4" y="5" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="11" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">approved</span>
+      </a>
+      <a class="row is-modified" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheet</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="4" y="5" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="11" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-added" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheetDevMode</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="4" y="3" width="18" height="2" fill="#d9a847"/><rect x="4" y="7" width="18" height="3" fill="#1f2937"/><rect x="4" y="12" width="18" height="3" fill="#1f2937"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-added" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheetDevMode</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="4" y="3" width="18" height="2" fill="#d9a847"/><rect x="4" y="7" width="18" height="3" fill="#1f2937"/><rect x="4" y="12" width="18" height="3" fill="#1f2937"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-added" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheetDevMode</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="4" y="3" width="18" height="2" fill="#d9a847"/><rect x="4" y="7" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="12" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+      <a class="row is-added" href="diff.html">
+        <span class="glyph">●</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">SignInViewTests</span><span class="testname">signInSheetDevMode</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="4" y="3" width="18" height="2" fill="#d9a847"/><rect x="4" y="7" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="12" width="18" height="3" fill="#e5e7eb"/><rect x="4" y="18" width="18" height="3" fill="#d9a847"/></svg></span>
+        <span class="verdict-tag">pending</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- group: GroupListViewTests -->
+  <section class="group">
+    <header class="group-head">
+      <span class="caret">▾</span>
+      <span class="ttl"><span class="ns">app-modules/Tests/GroupListFeatureTests/__Snapshots__/</span>GroupListViewTests</span>
+      <span></span>
+      <span class="stats">
+        <span><span class="dot dot-p"></span> 0</span>
+        <span><span class="dot dot-a"></span> 3</span>
+        <span><span class="dot dot-r"></span> 1</span>
+      </span>
+    </header>
+    <div class="rows">
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">GroupListViewTests</span><span class="testname">populatedStateOnline</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="3" y="5" width="20" height="2" fill="#374151"/><rect x="3" y="9" width="20" height="3" fill="#1f2937"/><rect x="3" y="14" width="20" height="3" fill="#1f2937"/><rect x="3" y="19" width="20" height="3" fill="#1f2937"/></svg></span>
+        <span class="verdict-tag">approved</span>
+      </a>
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">GroupListViewTests</span><span class="testname">populatedStateOnline</span></span>
+        <span class="axval theme-dark">dark</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#111"/><rect x="3" y="5" width="20" height="2" fill="#374151"/><rect x="3" y="9" width="20" height="3" fill="#1f2937"/><rect x="3" y="14" width="20" height="3" fill="#1f2937"/><rect x="3" y="19" width="20" height="3" fill="#1f2937"/></svg></span>
+        <span class="verdict-tag">approved</span>
+      </a>
+      <a class="row is-modified is-approved" href="diff.html">
+        <span class="glyph">✓</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">GroupListViewTests</span><span class="testname">populatedStateOnline</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>en</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="3" y="5" width="20" height="2" fill="#d1d5db"/><rect x="3" y="9" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="14" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="19" width="20" height="3" fill="#e5e7eb"/></svg></span>
+        <span class="verdict-tag">approved</span>
+      </a>
+      <a class="row is-modified is-rejected" href="diff.html">
+        <span class="glyph">✕</span><span class="file-tag"></span>
+        <span class="name"><span class="tcls">GroupListViewTests</span><span class="testname">populatedStateOnline</span></span>
+        <span class="axval theme-light">light</span>
+        <span class="axval lang"><code>lang</code>pt-BR</span><span></span>
+        <span class="thumb"><svg viewBox="0 0 26 26"><rect width="26" height="26" fill="#fafafa"/><rect x="3" y="5" width="20" height="2" fill="#d1d5db"/><rect x="3" y="9" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="14" width="20" height="3" fill="#e5e7eb"/><rect x="3" y="19" width="20" height="3" fill="#e5e7eb"/></svg></span>
+        <span class="verdict-tag">rejected</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ==================== KEYSTRIP ==================== -->
+<div class="keystrip">
+  <div class="row-key"><kbd>↑</kbd><kbd>↓</kbd> navigate</div>
+  <div class="row-key"><kbd>a</kbd> approve · <kbd>r</kbd> reject</div>
+  <div class="row-key"><kbd>g</kbd> collapse all groups</div>
+  <div class="row-key"><kbd>⌘</kbd> + <kbd>↵</kbd> finalize</div>
+</div>
+
+<!-- ==================== FINALIZE BAR ==================== -->
+<footer class="finalize-bar">
+  <div class="progress-label">
+    <span><span class="v-a">▰</span> 6 approved</span>
+    <span><span class="v-r">▰</span> 3 rejected</span>
+    <span><span class="v-p">▱</span> 15 pending</span>
+  </div>
+  <div class="progress-track">
+    <div class="segment seg-a"></div>
+    <div class="segment seg-r"></div>
+    <div class="segment seg-p"></div>
+  </div>
+  <button class="finalize">
+    finalize <span class="kbd">⌘↵</span>
+  </button>
+</footer>
+
+<script>
+  // Filter chip toggling
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('is-active');
+    });
+  });
+
+  // Clear all filters
+  document.querySelector('.clear-all').addEventListener('click', () => {
+    document.querySelectorAll('.chip.is-active').forEach(c => c.classList.remove('is-active'));
+  });
+
+  // Group collapse
+  document.querySelectorAll('.group-head').forEach(h => {
+    h.addEventListener('click', () => {
+      h.parentElement.classList.toggle('is-collapsed');
+    });
+  });
+
+  // Keystrip "g" to collapse all
+  document.addEventListener('keydown', e => {
+    if (e.key === 'g' && !/input|textarea/i.test(e.target.tagName)) {
+      const anyOpen = !!document.querySelector('.group:not(.is-collapsed)');
+      document.querySelectorAll('.group').forEach(g => g.classList.toggle('is-collapsed', anyOpen));
+    }
+  });
+</script>
+
+</body>
+</html>

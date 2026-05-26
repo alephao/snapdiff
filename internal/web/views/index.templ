@@ -1,100 +1,241 @@
 package views
 
-import "github.com/alephao/snapdiff/internal/review"
+import (
+	"fmt"
+
+	"github.com/alephao/snapdiff/internal/review"
+)
 
 type IndexData struct {
 	Items     []*review.Item
-	AxisNames []string                        // sorted, derived from items
-	AxisVals  map[string][]string             // axis -> sorted unique values
+	AxisNames []string                // sorted, derived from items
+	AxisVals  map[string][]string     // axis -> sorted unique values
+	Groups    []ItemGroup             // grouped by leaf directory of Path
+	Counts    Counts
+	RepoLabel string                  // shown in the top bar (e.g. "ios-app/")
+}
+
+type ItemGroup struct {
+	Label    string         // e.g. "ProfileViewTests"
+	Prefix   string         // namespace shown before the label
+	Items    []*review.Item
+	Counts   Counts
+}
+
+type Counts struct {
+	Total, Pending, Approved, Rejected int
 }
 
 templ Index(d IndexData) {
 	@Base("Review") {
+		@indexTopbar(d)
 		if len(d.Items) == 0 {
 			<section class="empty">
-				<h1>No diffs.</h1>
+				<h1>No diffs</h1>
 				<p>The working tree has no PNG changes in the configured globs.</p>
 			</section>
 		} else {
-			@bulkActionForm(d)
-			<section class="diff-list">
-				<table>
-					<thead>
-						<tr>
-							<th>Status</th>
-							<th>Path</th>
-							for _, name := range d.AxisNames {
-								<th>{ name }</th>
-							}
-							<th>Verdict</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, item := range d.Items {
-							<tr class={ verdictRowClass(item) }>
-								<td>{ item.Diff.Status.String() }</td>
-								<td><a href={ templ.URL("/diff/" + item.ID) }>{ item.Diff.Path }</a></td>
-								for _, name := range d.AxisNames {
-									<td>{ item.Diff.Axes[name] }</td>
-								}
-								<td>{ item.Verdict.Status.String() }</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			</section>
-			@finalizeForm()
+			@filterbar(d)
+			@bulkbar(d)
+			<main class="table-wrap">
+				for _, g := range d.Groups {
+					@groupBlock(d, g)
+				}
+			</main>
+			@keystripIndex()
+			@finalizeBar(d.Counts)
 		}
 	}
 }
 
-templ bulkActionForm(d IndexData) {
-	<section class="bulk-action">
-		<h2>Bulk action</h2>
-		<form method="post" action="/diff/bulk-verdict">
-			<fieldset class="filters">
-				<legend>Filter (leave blank = all)</legend>
-				for _, name := range d.AxisNames {
-					<label>
-						<span>{ name }</span>
-						<select name={ "filter_" + name }>
-							<option value="">— any —</option>
-							for _, val := range d.AxisVals[name] {
-								<option value={ val }>{ val }</option>
-							}
-						</select>
-					</label>
+templ indexTopbar(d IndexData) {
+	<header class="topbar">
+		<a class="brand" href="/">
+			<span class="mark">snapdiff</span>
+			<span class="repo">{ d.RepoLabel }</span>
+		</a>
+		<div class="session-meta">
+			<span class="blink">●</span>
+			awaiting reviewer · base ref <span style="color:var(--info)">HEAD</span>
+		</div>
+		<div class="counter-strip">
+			<div class="counter"><span class="n">{ fmt.Sprint(d.Counts.Total) }</span><span class="l">diffs</span></div>
+			<div class="counter is-approved"><span class="n">{ fmt.Sprint(d.Counts.Approved) }</span><span class="l">approved</span></div>
+			<div class="counter is-rejected"><span class="n">{ fmt.Sprint(d.Counts.Rejected) }</span><span class="l">rejected</span></div>
+			<div class="counter is-pending"><span class="n">{ fmt.Sprint(d.Counts.Pending) }</span><span class="l">pending</span></div>
+		</div>
+	</header>
+}
+
+templ filterbar(d IndexData) {
+	<section class="filterbar">
+		<span class="filter-label">filter</span>
+		<div class="axes">
+			for _, name := range d.AxisNames {
+				<div class="axis">
+					<span class="name">{ name }</span>
+					for _, val := range d.AxisVals[name] {
+						@chip(name, val)
+					}
+				</div>
+			}
+		</div>
+		<button type="button" class="clear-all">clear filters ✕</button>
+	</section>
+}
+
+templ chip(axis, val string) {
+	<button class="chip" data-axis={ axis } data-val={ val }>
+		{ val }
+		<span class="x">✕</span>
+	</button>
+}
+
+templ bulkbar(d IndexData) {
+	<form class="bulkbar" method="post" action="/diff/bulk-verdict">
+		<span class="match-count"><strong>{ fmt.Sprint(d.Counts.Total) }</strong> matching</span>
+		<input class="bulk-input" type="text" name="comment" placeholder="comment for bulk rejection — optional…"/>
+		<input type="hidden" name="status" value="approved" id="bulkStatus"/>
+		for _, name := range d.AxisNames {
+			<input type="hidden" name={ "filter_" + name } value="" data-axis-filter={ name }/>
+		}
+		<div class="bulk-actions">
+			<button type="submit" class="btn btn-approve" onclick="document.getElementById('bulkStatus').value='approved'">✓ approve all</button>
+			<button type="submit" class="btn btn-reject"  onclick="document.getElementById('bulkStatus').value='rejected'">✕ reject all</button>
+		</div>
+	</form>
+}
+
+templ groupBlock(d IndexData, g ItemGroup) {
+	<section class="group">
+		<header class="group-head">
+			<span class="caret">▾</span>
+			<span class="ttl">
+				if g.Prefix != "" {
+					<span class="ns">{ g.Prefix }</span>
 				}
-			</fieldset>
-			<fieldset class="verdict">
-				<legend>Verdict</legend>
-				<label><input type="radio" name="status" value="approved" checked/> Approve</label>
-				<label><input type="radio" name="status" value="rejected"/> Reject</label>
-				<label>
-					Comment <input type="text" name="comment" placeholder="optional"/>
-				</label>
-			</fieldset>
-			<button type="submit">Apply to all matches</button>
-		</form>
+				{ g.Label }
+			</span>
+			<span></span>
+			<span class="stats">
+				<span><span class="dot dot-p"></span> { fmt.Sprint(g.Counts.Pending) }</span>
+				<span><span class="dot dot-a"></span> { fmt.Sprint(g.Counts.Approved) }</span>
+				<span><span class="dot dot-r"></span> { fmt.Sprint(g.Counts.Rejected) }</span>
+			</span>
+		</header>
+		<div class="rows">
+			for _, item := range g.Items {
+				@rowLink(d, item)
+			}
+		</div>
 	</section>
 }
 
-templ finalizeForm() {
-	<section class="finalize">
-		<form method="post" action="/session/finalize">
-			<button type="submit" class="finalize-btn">Finalize and send verdicts to agent</button>
-		</form>
-		<p class="finalize-note">All items must have a verdict before finalize.</p>
-	</section>
+templ rowLink(d IndexData, item *review.Item) {
+	<a class={ rowClass(item) } href={ templ.URL("/diff/" + item.ID) }>
+		<span class="glyph">{ glyph(item) }</span>
+		<span class="file-tag"></span>
+		<span class="name">
+			<span class="testname">{ baseName(item.Diff.Path) }</span>
+		</span>
+		<span class="axval-group">
+			for _, name := range d.AxisNames {
+				if v, ok := item.Diff.Axes[name]; ok && v != "" {
+					<span class="axval"><span class="k">{ name }:</span><span class="v">{ v }</span></span>
+				}
+			}
+		</span>
+		<span class="verdict-tag">{ item.Verdict.Status.String() }</span>
+	</a>
 }
 
-func verdictRowClass(item *review.Item) string {
+templ keystripIndex() {
+	<div class="keystrip">
+		<div class="row-key"><kbd>g</kbd> collapse / expand all</div>
+		<div class="row-key">click row to open diff</div>
+	</div>
+}
+
+templ finalizeBar(c Counts) {
+	<footer class="finalize-bar">
+		<div class="progress-label">
+			<span><span class="v-a">▰</span> { fmt.Sprint(c.Approved) } approved</span>
+			<span><span class="v-r">▰</span> { fmt.Sprint(c.Rejected) } rejected</span>
+			<span><span class="v-p">▱</span> { fmt.Sprint(c.Pending) } pending</span>
+		</div>
+		<div class="progress-track">
+			@segmentBar(c)
+		</div>
+		<form class="finalize-form" method="post" action="/session/finalize">
+			<button type="submit" class={ finalizeClass(c) } disabled?={ c.Pending != 0 }>
+				Finalize
+				<span class="kbd">⌘↵</span>
+			</button>
+		</form>
+	</footer>
+}
+
+templ segmentBar(c Counts) {
+	if c.Total > 0 {
+		<div class="segment seg-a" style={ widthStyle(c.Approved, c.Total, 0) }></div>
+		<div class="segment seg-r" style={ widthStyle(c.Rejected, c.Total, c.Approved) }></div>
+		<div class="segment seg-p" style={ widthStyle(c.Pending, c.Total, c.Approved + c.Rejected) }></div>
+	}
+}
+
+// ---- helpers ----
+
+func rowClass(item *review.Item) string {
+	cls := "row"
+	switch item.Diff.Status.String() {
+	case "added":
+		cls += " is-added"
+	case "modified":
+		cls += " is-modified"
+	case "deleted":
+		cls += " is-deleted"
+	}
 	switch item.Verdict.Status {
 	case review.StatusApproved:
-		return "row-approved"
+		cls += " is-approved"
 	case review.StatusRejected:
-		return "row-rejected"
-	default:
-		return "row-pending"
+		cls += " is-rejected"
 	}
+	return cls
+}
+
+func glyph(item *review.Item) string {
+	switch item.Verdict.Status {
+	case review.StatusApproved:
+		return "✓"
+	case review.StatusRejected:
+		return "✕"
+	default:
+		return "●"
+	}
+}
+
+func baseName(path string) string {
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '/' {
+			return path[i+1:]
+		}
+	}
+	return path
+}
+
+func widthStyle(part, total, offset int) string {
+	if total == 0 {
+		return "width:0%"
+	}
+	w := float64(part) / float64(total) * 100
+	o := float64(offset) / float64(total) * 100
+	return fmt.Sprintf("left:%.2f%%; width:%.2f%%", o, w)
+}
+
+func finalizeClass(c Counts) string {
+	if c.Pending == 0 && c.Total > 0 {
+		return "finalize is-ready"
+	}
+	return "finalize"
 }

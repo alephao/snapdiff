@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>snapdiff — formViewSignedIn.dark.en.png</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0c0c0d;
+    --surface:   #15151a;
+    --raised:    #1c1c22;
+    --elevated:  #24242c;
+    --hairline:  #25252e;
+    --divider:   #2f2f3a;
+    --emphasis:  #43434f;
+    --fg-dim:    #58585f;
+    --fg-muted:  #87878f;
+    --fg:        #c8c8d2;
+    --fg-bright: #f5f5fa;
+    --pending:   #d9a847;
+    --approved:  #7eb87b;
+    --rejected:  #d97757;
+    --info:      #8eb6d6;
+    --accent:    #d9a847;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    font-variant-ligatures: none;
+  }
+  ::selection { background: var(--accent); color: #1a1004; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--hairline); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--emphasis); }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    padding: 12px 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .back {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    transition: color 80ms ease, border-color 80ms ease;
+  }
+  .back:hover { color: var(--fg-bright); border-color: var(--emphasis); }
+  .back .arrow { color: var(--accent); }
+  .breadcrumb {
+    padding-left: 18px;
+    color: var(--fg-dim);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .breadcrumb .sep { color: var(--fg-dim); margin: 0 6px; }
+  .breadcrumb .leaf {
+    color: var(--fg-bright);
+    font-weight: 500;
+  }
+  .nav-prev-next {
+    display: flex; gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--fg-muted);
+  }
+  .nav-prev-next .nbtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: all 80ms ease;
+  }
+  .nav-prev-next .nbtn:hover { color: var(--fg-bright); border-color: var(--emphasis); }
+  .nav-prev-next .nbtn .pos {
+    color: var(--fg-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-prev-next kbd {
+    background: var(--raised);
+    border: 1px solid var(--hairline);
+    padding: 1px 5px;
+    font-size: 9.5px;
+    color: var(--fg-muted);
+    font-family: inherit;
+  }
+
+  /* ===== META STRIP ===== */
+  .meta {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .meta .path {
+    font-size: 13px;
+    color: var(--fg-bright);
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .meta .path .lead {
+    color: var(--fg-dim);
+  }
+  .meta .status-tag {
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--info);
+    color: var(--info);
+    margin-right: 8px;
+  }
+  .meta .axes-inline {
+    display: flex; gap: 14px;
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .meta .axes-inline .ax {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .meta .axes-inline .ax .k {
+    color: var(--fg-dim);
+  }
+  .meta .axes-inline .ax .v {
+    color: var(--fg-bright);
+  }
+  .meta .verdict-current {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--pending);
+  }
+  .meta .verdict-current::before { content: "●  "; }
+
+  /* ===== MODE SWITCHER ===== */
+  .modes {
+    display: flex;
+    gap: 0;
+    padding: 0 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .mode-btn {
+    background: transparent;
+    border: 0;
+    color: var(--fg-muted);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 14px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 100ms ease;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .mode-btn:hover { color: var(--fg-bright); }
+  .mode-btn.is-active {
+    color: var(--fg-bright);
+    border-bottom-color: var(--accent);
+    background: linear-gradient(180deg, rgba(217,168,71,0.05), transparent 70%);
+  }
+  .mode-btn .num {
+    color: var(--accent);
+    font-size: 9.5px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    padding: 1px 5px;
+  }
+  .mode-btn.is-active .num {
+    border-color: var(--accent);
+  }
+
+  /* ===== DIFF STAGE ===== */
+  .stage {
+    padding: 24px 18px 100px;
+    display: flex; justify-content: center;
+    background:
+      radial-gradient(800px 400px at 50% 0%, rgba(217,168,71,0.04), transparent 70%),
+      var(--bg);
+    min-height: 70vh;
+  }
+  .stage-inner { width: 100%; max-width: 1000px; }
+
+  .pane { display: none; }
+  .pane.is-active { display: block; }
+
+  /* shared phone frame */
+  .phone {
+    width: 320px;
+    height: 568px;
+    border: 1px solid var(--divider);
+    background: #fff;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone.dark { background: #0d1117; }
+  .phone-label {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-top: 14px;
+  }
+  .phone-label .h { color: var(--fg-bright); }
+
+  /* SIDE BY SIDE */
+  .pane-side {
+    display: flex; gap: 24px; justify-content: center; align-items: flex-start;
+  }
+  .pane-side .col { display: flex; flex-direction: column; align-items: center; }
+
+  /* SWIPE */
+  .pane-swipe { display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
+  .swipe-wrap {
+    position: relative;
+    width: 320px; height: 568px;
+  }
+  .swipe-wrap .phone { position: absolute; top: 0; left: 0; }
+  .swipe-wrap .phone.below { z-index: 1; }
+  .swipe-wrap .phone.above {
+    z-index: 2;
+    clip-path: inset(0 50% 0 0);
+  }
+  .swipe-wrap .splitter {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    z-index: 3;
+    pointer-events: none;
+    left: 50%;
+    transform: translateX(-1px);
+    box-shadow: 0 0 0 1px rgba(217,168,71,0.25), 0 0 16px rgba(217,168,71,0.5);
+  }
+  .swipe-wrap .splitter::after {
+    content: "↔";
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: #1a1004;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 13px;
+    box-shadow: 0 0 0 4px rgba(217,168,71,0.18);
+  }
+  .swipe-control {
+    width: 320px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .swipe-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    background: var(--surface);
+    height: 4px;
+    outline: none;
+    border: 1px solid var(--hairline);
+  }
+  .swipe-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--accent);
+    cursor: ew-resize;
+    border-radius: 0;
+  }
+  .swipe-control .lbl {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+
+  /* TOGGLE */
+  .pane-toggle { display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 14px; }
+  .toggle-wrap { position: relative; width: 320px; height: 568px; }
+  .toggle-wrap .phone { position: absolute; top: 0; left: 0; transition: opacity 80ms ease; }
+  .toggle-wrap.show-current .below { opacity: 0; }
+  .toggle-help {
+    font-size: 11px;
+    color: var(--fg-muted);
+    letter-spacing: 0.05em;
+    display: flex; gap: 14px; align-items: center;
+  }
+  .toggle-help kbd {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    padding: 2px 7px;
+    font-family: inherit;
+    color: var(--fg-bright);
+    font-size: 11px;
+  }
+  .toggle-help .current-tag {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 10px;
+  }
+
+  /* PIXEL */
+  .pane-pixel { display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 12px; }
+  .pixel-wrap { position: relative; width: 320px; height: 568px; }
+  .pixel-wrap .phone { position: absolute; top: 0; left: 0; }
+  .pixel-wrap .phone.faded {
+    filter: grayscale(1) brightness(0.55);
+    opacity: 0.7;
+  }
+  .pixel-wrap .marks {
+    position: absolute; inset: 0; pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  .pixel-wrap .marks svg { width: 100%; height: 100%; }
+  .pixel-legend {
+    display: flex; gap: 16px; align-items: center;
+    font-size: 11px;
+    color: var(--fg-muted);
+    letter-spacing: 0.05em;
+  }
+  .pixel-legend .sw {
+    display: inline-block;
+    width: 12px; height: 12px;
+    background: var(--rejected);
+    box-shadow: 0 0 8px rgba(217,119,87,0.5);
+    margin-right: 6px;
+    vertical-align: -2px;
+  }
+  .pixel-legend strong {
+    color: var(--fg-bright);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ONION */
+  .pane-onion { display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 12px; }
+  .onion-wrap { position: relative; width: 320px; height: 568px; }
+  .onion-wrap .phone { position: absolute; top: 0; left: 0; }
+  .onion-wrap .phone.above { opacity: 0.5; }
+  .onion-control {
+    width: 320px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .onion-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, var(--info), var(--accent));
+    height: 4px;
+    outline: none;
+    border: 0;
+  }
+  .onion-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--fg-bright);
+    border: 1px solid var(--accent);
+    cursor: ew-resize;
+    border-radius: 0;
+  }
+
+  /* ===== VERDICT DOCK ===== */
+  .verdict-dock {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-top: 1px solid var(--divider);
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.4);
+  }
+  .v-toggle {
+    display: inline-flex;
+    border: 1px solid var(--hairline);
+    background: var(--bg);
+  }
+  .v-toggle .v-opt {
+    padding: 9px 14px;
+    background: transparent;
+    border: 0;
+    color: var(--fg-muted);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 100ms ease;
+    border-right: 1px solid var(--hairline);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .v-toggle .v-opt:last-child { border-right: 0; }
+  .v-toggle .v-opt:hover { color: var(--fg-bright); }
+  .v-toggle .v-opt.is-approve.is-on { background: var(--approved); color: #08200a; }
+  .v-toggle .v-opt.is-reject.is-on { background: var(--rejected); color: #2a0e08; }
+  .v-toggle .v-opt .kbd {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+  .v-toggle .v-opt.is-on .kbd {
+    background: rgba(0,0,0,0.2);
+    border-color: rgba(0,0,0,0.2);
+  }
+  .v-comment {
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 10px 12px;
+    width: 100%;
+    outline: none;
+  }
+  .v-comment::placeholder { color: var(--fg-dim); }
+  .v-comment:focus { border-color: var(--accent); }
+  .v-save {
+    padding: 10px 18px;
+    background: var(--bg);
+    border: 1px solid var(--emphasis);
+    color: var(--fg-bright);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 100ms ease;
+  }
+  .v-save:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #1a1004;
+  }
+
+  /* ===== KEYSTRIP ===== */
+  .keystrip {
+    position: fixed; right: 14px; bottom: 78px;
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 10px;
+    color: var(--fg-dim);
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .keystrip .row-key { display: inline-flex; align-items: center; gap: 6px; }
+  .keystrip kbd {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    padding: 1px 5px;
+    font-size: 9.5px;
+    color: var(--fg-muted);
+    font-family: inherit;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 760px) {
+    .meta { grid-template-columns: 1fr; }
+    .meta .axes-inline { flex-wrap: wrap; gap: 8px 14px; }
+    .pane-side { flex-direction: column; }
+    .swipe-wrap, .toggle-wrap, .pixel-wrap, .onion-wrap, .swipe-control, .onion-control { width: 100%; max-width: 320px; }
+    .phone { width: 100%; max-width: 320px; }
+    .modes { overflow-x: auto; }
+    .mode-btn { white-space: nowrap; }
+    .verdict-dock { grid-template-columns: 1fr; }
+    .v-toggle { width: 100%; }
+    .v-toggle .v-opt { flex: 1; justify-content: center; }
+    .nav-prev-next { display: none; }
+    .keystrip { display: none; }
+    .breadcrumb { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <a class="back" href="index.html"><span class="arrow">←</span> all diffs</a>
+  <div class="breadcrumb">
+    AddGroupFeatureTests<span class="sep">/</span>
+    __Snapshots__<span class="sep">/</span>
+    AddGroupFormViewTests<span class="sep">/</span>
+    <span class="leaf">formViewSignedIn.dark.en.png</span>
+  </div>
+  <div class="nav-prev-next">
+    <a class="nbtn" href="#"><kbd>k</kbd> prev</a>
+    <a class="nbtn" href="#"><span class="pos">3 / 24</span></a>
+    <a class="nbtn" href="#">next <kbd>j</kbd></a>
+  </div>
+</header>
+
+<!-- ===== META STRIP ===== -->
+<section class="meta">
+  <div class="path">
+    <span class="status-tag">M</span>
+    <span class="lead">AddGroupFeatureTests/__Snapshots__/AddGroupFormViewTests/</span>formViewSignedIn.dark.en.png
+  </div>
+  <div class="axes-inline">
+    <span class="ax"><span class="k">testClass:</span><span class="v">AddGroupFormViewTests</span></span>
+    <span class="ax"><span class="k">test:</span><span class="v">formViewSignedIn</span></span>
+    <span class="ax"><span class="k">theme:</span><span class="v">dark</span></span>
+    <span class="ax"><span class="k">lang:</span><span class="v">en</span></span>
+  </div>
+  <div class="verdict-current">pending</div>
+</section>
+
+<!-- ===== MODE SWITCHER ===== -->
+<nav class="modes" id="modes">
+  <button class="mode-btn is-active" data-mode="side"><span class="num">1</span>side by side</button>
+  <button class="mode-btn" data-mode="swipe"><span class="num">2</span>swipe</button>
+  <button class="mode-btn" data-mode="toggle"><span class="num">3</span>toggle</button>
+  <button class="mode-btn" data-mode="pixel"><span class="num">4</span>pixel diff</button>
+  <button class="mode-btn" data-mode="onion"><span class="num">5</span>onion</button>
+</nav>
+
+<!-- ===== STAGE ===== -->
+<main class="stage">
+  <div class="stage-inner">
+
+    <!-- ===== SIDE ===== -->
+    <section class="pane pane-side is-active" data-mode="side">
+      <div class="col">
+        <div class="phone dark">
+          <!-- BASELINE: signed-in form, default amber button -->
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <!-- status bar -->
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <!-- nav title -->
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="295" y="84" fill="#8eb6d6" font-family="JetBrains Mono" font-size="13" text-anchor="end">Cancel</text>
+            <!-- field 1: name -->
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <!-- field 2: members -->
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <circle cx="40" cy="230" r="10" fill="#7eb87b"/>
+            <text x="40" y="234" fill="#08200a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">YO</text>
+            <circle cx="64" cy="230" r="10" fill="#d9a847"/>
+            <text x="64" y="234" fill="#1a1004" font-family="JetBrains Mono" font-size="9" text-anchor="middle">AL</text>
+            <circle cx="88" cy="230" r="10" fill="#8eb6d6"/>
+            <text x="88" y="234" fill="#08152a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">PR</text>
+            <circle cx="112" cy="230" r="10" fill="#d97757"/>
+            <text x="112" y="234" fill="#2a0e08" font-family="JetBrains Mono" font-size="9" text-anchor="middle">SA</text>
+            <!-- field 3: currency -->
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="311" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">USD — US Dollar</text>
+            <!-- description -->
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="358" width="280" height="80" fill="#1c2128" stroke="#2f2f3a"/>
+            <!-- submit button -->
+            <rect x="20" y="490" width="280" height="48" fill="#d9a847"/>
+            <text x="160" y="520" fill="#1a1004" font-family="JetBrains Mono" font-size="13" font-weight="600" text-anchor="middle">CREATE GROUP</text>
+          </svg>
+        </div>
+        <div class="phone-label"><span class="h">BASELINE</span> · HEAD · 4,827 bytes</div>
+      </div>
+      <div class="col">
+        <div class="phone dark">
+          <!-- CURRENT: includes new "VISIBILITY" toggle row + slightly different button (sharper, larger) -->
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="295" y="84" fill="#8eb6d6" font-family="JetBrains Mono" font-size="13" text-anchor="end">Cancel</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <circle cx="40" cy="230" r="10" fill="#7eb87b"/>
+            <text x="40" y="234" fill="#08200a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">YO</text>
+            <circle cx="64" cy="230" r="10" fill="#d9a847"/>
+            <text x="64" y="234" fill="#1a1004" font-family="JetBrains Mono" font-size="9" text-anchor="middle">AL</text>
+            <circle cx="88" cy="230" r="10" fill="#8eb6d6"/>
+            <text x="88" y="234" fill="#08152a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">PR</text>
+            <circle cx="112" cy="230" r="10" fill="#d97757"/>
+            <text x="112" y="234" fill="#2a0e08" font-family="JetBrains Mono" font-size="9" text-anchor="middle">SA</text>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="311" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">USD — US Dollar</text>
+            <!-- NEW: visibility row -->
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">VISIBILITY</text>
+            <rect x="20" y="358" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="381" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Private</text>
+            <rect x="260" y="368" width="32" height="18" rx="9" fill="#7eb87b"/>
+            <circle cx="282" cy="377" r="7" fill="#fafafa"/>
+            <!-- description shifted -->
+            <text x="20" y="420" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="428" width="280" height="50" fill="#1c2128" stroke="#2f2f3a"/>
+            <!-- new button (sharper/larger) -->
+            <rect x="20" y="500" width="280" height="48" fill="#d9a847"/>
+            <text x="160" y="530" fill="#1a1004" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle">CREATE GROUP</text>
+          </svg>
+        </div>
+        <div class="phone-label"><span class="h">CURRENT</span> · working tree · 5,142 bytes</div>
+      </div>
+    </section>
+
+    <!-- ===== SWIPE ===== -->
+    <section class="pane pane-swipe" data-mode="swipe">
+      <div class="swipe-wrap" id="swipeWrap">
+        <div class="phone dark below">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="295" y="84" fill="#8eb6d6" font-family="JetBrains Mono" font-size="13" text-anchor="end">Cancel</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <circle cx="40" cy="230" r="10" fill="#7eb87b"/>
+            <text x="40" y="234" fill="#08200a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">YO</text>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="358" width="280" height="80" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="490" width="280" height="48" fill="#d9a847"/>
+            <text x="160" y="520" fill="#1a1004" font-family="JetBrains Mono" font-size="13" font-weight="600" text-anchor="middle">CREATE</text>
+          </svg>
+        </div>
+        <div class="phone dark above" id="swipeAbove">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="295" y="84" fill="#8eb6d6" font-family="JetBrains Mono" font-size="13" text-anchor="end">Cancel</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <circle cx="40" cy="230" r="10" fill="#7eb87b"/>
+            <text x="40" y="234" fill="#08200a" font-family="JetBrains Mono" font-size="9" text-anchor="middle">YO</text>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">VISIBILITY</text>
+            <rect x="20" y="358" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="260" y="368" width="32" height="18" rx="9" fill="#7eb87b"/>
+            <circle cx="282" cy="377" r="7" fill="#fafafa"/>
+            <text x="20" y="420" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="428" width="280" height="50" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="500" width="280" height="48" fill="#d9a847"/>
+            <text x="160" y="530" fill="#1a1004" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle">CREATE</text>
+          </svg>
+        </div>
+        <div class="splitter" id="swipeSplit"></div>
+      </div>
+      <div class="swipe-control">
+        <span class="lbl">baseline</span>
+        <input class="swipe-slider" id="swipeSlider" type="range" min="0" max="100" value="50"/>
+        <span class="lbl">current</span>
+      </div>
+    </section>
+
+    <!-- ===== TOGGLE ===== -->
+    <section class="pane pane-toggle" data-mode="toggle">
+      <div class="toggle-wrap" id="toggleWrap">
+        <div class="phone dark below" id="toggleBaseline">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="358" width="280" height="80" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="490" width="280" height="48" fill="#d9a847"/>
+          </svg>
+        </div>
+        <div class="phone dark above" id="toggleCurrent">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="280" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11">●●●</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="30" y="161" fill="#c8c8d2" font-family="JetBrains Mono" font-size="13">Brunch Squad</text>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">VISIBILITY</text>
+            <rect x="20" y="358" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="260" y="368" width="32" height="18" rx="9" fill="#7eb87b"/>
+            <text x="20" y="420" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="428" width="280" height="50" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="500" width="280" height="48" fill="#d9a847"/>
+          </svg>
+        </div>
+      </div>
+      <div class="toggle-help">
+        <span>showing <span class="current-tag" id="toggleLabel">baseline</span></span>
+        <span>· hold <kbd>T</kbd> to flip · click to lock</span>
+      </div>
+    </section>
+
+    <!-- ===== PIXEL ===== -->
+    <section class="pane pane-pixel" data-mode="pixel">
+      <div class="pixel-wrap">
+        <div class="phone dark faded">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">VISIBILITY</text>
+            <rect x="20" y="358" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="420" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="428" width="280" height="50" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="500" width="280" height="48" fill="#d9a847"/>
+          </svg>
+        </div>
+        <div class="marks">
+          <svg viewBox="0 0 320 568" preserveAspectRatio="none">
+            <!-- highlight differing pixels (the new visibility row + shifted description + larger button) -->
+            <rect x="20" y="350" width="280" height="40" fill="#d97757" opacity="0.75"/>
+            <rect x="20" y="420" width="280" height="60" fill="#d97757" opacity="0.45"/>
+            <rect x="20" y="490" width="280" height="58" fill="#d97757" opacity="0.6"/>
+            <!-- some noise dots to look authentic -->
+            <circle cx="160" cy="84" r="2" fill="#d97757" opacity="0.6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="pixel-legend">
+        <span><span class="sw"></span> changed pixels</span>
+        <span>·</span>
+        <span><strong>11,842</strong> / 181,760 differ (<strong>6.51%</strong>)</span>
+      </div>
+    </section>
+
+    <!-- ===== ONION ===== -->
+    <section class="pane pane-onion" data-mode="onion">
+      <div class="onion-wrap" id="onionWrap">
+        <div class="phone dark below">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="358" width="280" height="80" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="490" width="280" height="48" fill="#d9a847"/>
+          </svg>
+        </div>
+        <div class="phone dark above" id="onionAbove" style="opacity:0.5">
+          <svg viewBox="0 0 320 568" width="100%" height="100%">
+            <rect x="0" y="0" width="320" height="44" fill="#0d1117"/>
+            <text x="20" y="28" fill="#fafafa" font-family="JetBrains Mono" font-size="11" font-weight="600">9:41</text>
+            <text x="20" y="84" fill="#fafafa" font-family="JetBrains Mono" font-size="20" font-weight="600">New Group</text>
+            <text x="20" y="130" fill="#87878f" font-family="JetBrains Mono" font-size="11">NAME</text>
+            <rect x="20" y="138" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="200" fill="#87878f" font-family="JetBrains Mono" font-size="11">MEMBERS · 4</text>
+            <rect x="20" y="208" width="280" height="44" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="280" fill="#87878f" font-family="JetBrains Mono" font-size="11">CURRENCY</text>
+            <rect x="20" y="288" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <text x="20" y="350" fill="#87878f" font-family="JetBrains Mono" font-size="11">VISIBILITY</text>
+            <rect x="20" y="358" width="280" height="36" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="260" y="368" width="32" height="18" rx="9" fill="#7eb87b"/>
+            <text x="20" y="420" fill="#87878f" font-family="JetBrains Mono" font-size="11">DESCRIPTION</text>
+            <rect x="20" y="428" width="280" height="50" fill="#1c2128" stroke="#2f2f3a"/>
+            <rect x="20" y="500" width="280" height="48" fill="#d9a847"/>
+          </svg>
+        </div>
+      </div>
+      <div class="onion-control">
+        <span class="lbl" style="font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--info)">baseline</span>
+        <input class="onion-slider" id="onionSlider" type="range" min="0" max="100" value="50"/>
+        <span class="lbl" style="font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent)">current</span>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ===== KEYSTRIP ===== -->
+<div class="keystrip">
+  <div class="row-key"><kbd>1</kbd>–<kbd>5</kbd> switch mode</div>
+  <div class="row-key"><kbd>a</kbd> approve · <kbd>r</kbd> reject</div>
+  <div class="row-key"><kbd>j</kbd> next · <kbd>k</kbd> prev</div>
+  <div class="row-key"><kbd>esc</kbd> back to index</div>
+</div>
+
+<!-- ===== VERDICT DOCK ===== -->
+<footer class="verdict-dock">
+  <div class="v-toggle">
+    <button class="v-opt is-approve" id="vApprove">✓ approve <span class="kbd">a</span></button>
+    <button class="v-opt is-reject" id="vReject">✕ reject <span class="kbd">r</span></button>
+  </div>
+  <input class="v-comment" placeholder="why? (required for reject — quote the offending region if useful)" />
+  <button class="v-save">save verdict <span style="opacity:.5; margin-left:6px">⌘↵</span></button>
+</footer>
+
+<script>
+  // Mode switching
+  const modeBtns = document.querySelectorAll('.mode-btn');
+  const panes = document.querySelectorAll('.pane');
+  function setMode(m) {
+    modeBtns.forEach(b => b.classList.toggle('is-active', b.dataset.mode === m));
+    panes.forEach(p => p.classList.toggle('is-active', p.dataset.mode === m));
+  }
+  modeBtns.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+  // Number keys 1-5
+  document.addEventListener('keydown', e => {
+    if (/input|textarea/i.test(e.target.tagName)) return;
+    const map = {'1':'side','2':'swipe','3':'toggle','4':'pixel','5':'onion'};
+    if (map[e.key]) setMode(map[e.key]);
+    if (e.key === 'Escape') location.href = 'index.html';
+  });
+
+  // Swipe slider
+  const swipeSlider = document.getElementById('swipeSlider');
+  const swipeAbove = document.getElementById('swipeAbove');
+  const swipeSplit = document.getElementById('swipeSplit');
+  function updateSwipe() {
+    const v = swipeSlider.value;
+    swipeAbove.style.clipPath = `inset(0 ${100 - v}% 0 0)`;
+    swipeSplit.style.left = v + '%';
+  }
+  swipeSlider.addEventListener('input', updateSwipe);
+  updateSwipe();
+
+  // Toggle: hold T to show current, release to baseline; click to lock
+  const toggleWrap = document.getElementById('toggleWrap');
+  const toggleLabel = document.getElementById('toggleLabel');
+  let toggleLocked = false;
+  function showCurrent(on) {
+    toggleWrap.classList.toggle('show-current', !on);
+    toggleLabel.textContent = on ? 'current' : 'baseline';
+  }
+  showCurrent(false);
+  toggleWrap.addEventListener('click', () => {
+    toggleLocked = !toggleLocked;
+    showCurrent(toggleLocked);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 't' || e.key === 'T') {
+      if (!toggleLocked) showCurrent(true);
+    }
+  });
+  document.addEventListener('keyup', e => {
+    if (e.key === 't' || e.key === 'T') {
+      if (!toggleLocked) showCurrent(false);
+    }
+  });
+
+  // Onion
+  const onionSlider = document.getElementById('onionSlider');
+  const onionAbove = document.getElementById('onionAbove');
+  onionSlider.addEventListener('input', () => {
+    onionAbove.style.opacity = (onionSlider.value / 100).toFixed(2);
+  });
+
+  // Verdict pick (mutually exclusive visual state)
+  const vApprove = document.getElementById('vApprove');
+  const vReject = document.getElementById('vReject');
+  function pickVerdict(which) {
+    vApprove.classList.toggle('is-on', which === 'a');
+    vReject.classList.toggle('is-on', which === 'r');
+  }
+  vApprove.addEventListener('click', () => pickVerdict('a'));
+  vReject.addEventListener('click', () => pickVerdict('r'));
+  document.addEventListener('keydown', e => {
+    if (/input|textarea/i.test(e.target.tagName)) return;
+    if (e.key === 'a') pickVerdict('a');
+    if (e.key === 'r') pickVerdict('r');
+  });
+</script>
+
+</body>
+</html>

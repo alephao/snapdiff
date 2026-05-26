@@ -7,16 +7,13 @@ templ Base(title string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } — snapdiff</title>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;400;500;600;800&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/static/snapdiff.css"/>
 		</head>
 		<body>
-			<header class="topbar">
-				<a class="brand" href="/">snapdiff</a>
-				<span class="title">{ title }</span>
-			</header>
-			<main>
-				{ children... }
-			</main>
+			{ children... }
 			<script src="/static/snapdiff.js"></script>
 		</body>
 	</html>

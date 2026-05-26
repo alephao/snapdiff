@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -32,6 +33,7 @@ type Server struct {
 	session    *review.Session
 	differ     *imdiff.Differ
 	publicURL  string // informational only; printed by cmd
+	repoLabel  string // shown in the top bar
 	onFinalize FinalizeFunc
 
 	handler http.Handler
@@ -48,6 +50,9 @@ func NewServer(s *review.Session, d *imdiff.Differ, publicURL string, onFinalize
 	srv.handler = srv.routes()
 	return srv
 }
+
+// SetRepoLabel customizes the namespace shown in the brand area (e.g. "ios-app/").
+func (s *Server) SetRepoLabel(label string) { s.repoLabel = label }
 
 // Handler returns the http.Handler suitable to mount on an http.Server.
 func (s *Server) Handler() http.Handler { return s.handler }
@@ -77,24 +82,46 @@ func (s *Server) routes() http.Handler {
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	items := s.session.Items()
+	axisN := axisNames(items)
 	d := views.IndexData{
 		Items:     items,
-		AxisNames: axisNames(items),
+		AxisNames: axisN,
 		AxisVals:  axisValues(items),
+		Groups:    buildGroups(items),
+		Counts:    countItems(items),
+		RepoLabel: s.repoLabel,
 	}
 	render(w, r, views.Index(d))
 }
 
 func (s *Server) handleDiff(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	it, ok := s.session.Get(id)
-	if !ok {
+	items := s.session.Items()
+	var idx = -1
+	for i, it := range items {
+		if it.ID == id {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
 		http.NotFound(w, r)
 		return
 	}
+	prev, next := "", ""
+	if idx > 0 {
+		prev = items[idx-1].ID
+	}
+	if idx < len(items)-1 {
+		next = items[idx+1].ID
+	}
 	render(w, r, views.Diff(views.DiffData{
-		Item:      it,
-		AxisNames: axisNames(s.session.Items()),
+		Item:      items[idx],
+		AxisNames: axisNames(items),
+		Position:  idx + 1,
+		Total:     len(items),
+		PrevID:    prev,
+		NextID:    next,
 	}))
 }
 
@@ -210,7 +237,9 @@ func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, _ = w.Write([]byte("<!DOCTYPE html><html><body><h1>Done</h1><p>Verdicts sent to agent.</p></body></html>"))
+	_, _ = w.Write([]byte(`<!DOCTYPE html><html><head><title>done</title>
+<link rel="stylesheet" href="/static/snapdiff.css"/></head>
+<body><section class="empty"><h1>Done</h1><p>Verdicts sent to agent.</p></section></body></html>`))
 }
 
 func parseStatus(s string) (review.VerdictStatus, error) {
@@ -228,6 +257,8 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = c.Render(r.Context(), w)
 }
+
+// ---- shared computations ----
 
 // axisNames returns the sorted union of axis names across items.
 func axisNames(items []*review.Item) []string {
@@ -266,4 +297,65 @@ func axisValues(items []*review.Item) map[string][]string {
 		out[k] = vals
 	}
 	return out
+}
+
+func countItems(items []*review.Item) views.Counts {
+	c := views.Counts{Total: len(items)}
+	for _, it := range items {
+		switch it.Verdict.Status {
+		case review.StatusApproved:
+			c.Approved++
+		case review.StatusRejected:
+			c.Rejected++
+		default:
+			c.Pending++
+		}
+	}
+	return c
+}
+
+// buildGroups groups items by the leaf directory of their path (typically
+// the test-class directory). Items keep their original order within a group;
+// group order follows first-appearance.
+func buildGroups(items []*review.Item) []views.ItemGroup {
+	byDir := map[string]*views.ItemGroup{}
+	var order []string
+	for _, it := range items {
+		dir := filepath.Dir(it.Diff.Path)
+		// Use slash-separated paths (gitscan emits forward-slash paths).
+		dir = filepath.ToSlash(dir)
+		g, ok := byDir[dir]
+		if !ok {
+			label, prefix := splitLeaf(dir)
+			g = &views.ItemGroup{Label: label, Prefix: prefix}
+			byDir[dir] = g
+			order = append(order, dir)
+		}
+		g.Items = append(g.Items, it)
+		switch it.Verdict.Status {
+		case review.StatusApproved:
+			g.Counts.Approved++
+		case review.StatusRejected:
+			g.Counts.Rejected++
+		default:
+			g.Counts.Pending++
+		}
+		g.Counts.Total++
+	}
+	out := make([]views.ItemGroup, 0, len(order))
+	for _, k := range order {
+		out = append(out, *byDir[k])
+	}
+	return out
+}
+
+func splitLeaf(dir string) (label, prefix string) {
+	if dir == "" || dir == "." {
+		return "(root)", ""
+	}
+	slash := strings.LastIndex(dir, "/")
+	if slash < 0 {
+		return dir, ""
+	}
+	return dir[slash+1:], dir[:slash+1]
 }

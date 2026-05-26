@@ -141,6 +141,7 @@ func runDaemon(args []string, emitJSON bool) error {
 	}
 	publicURL := fmt.Sprintf("http://%s", ln.Addr().String())
 	srv := web.NewServer(sess, differ, publicURL, onFinalize)
+	srv.SetRepoLabel(filepath.Base(repoDir) + "/")
 	httpServer := &http.Server{
 		Handler:           srv.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
