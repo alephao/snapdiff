@@ -158,8 +158,15 @@ func runDaemon(args []string, emitJSON bool) error {
 		close(serveErrCh)
 	}()
 
+	// In `await` mode the agent is blocking on stdout, so we exit immediately
+	// after finalize — no linger. `serve` mode keeps the configured linger so
+	// the browser can render the success state.
+	linger := time.Duration(cfg.Server.LingerSeconds) * time.Second
+	if emitJSON {
+		linger = 0
+	}
 	shutErr := lifecycle.WaitFinalizeThenShutdown(ctx, sess.Done(), httpServer, lifecycle.Options{
-		Linger:          time.Duration(cfg.Server.LingerSeconds) * time.Second,
+		Linger:          linger,
 		ShutdownTimeout: 5 * time.Second,
 	})
 	if shutErr != nil && !errors.Is(shutErr, context.Canceled) && !errors.Is(shutErr, http.ErrServerClosed) {
