@@ -30,6 +30,13 @@ generate:
 build: generate
 	go build -ldflags '$(LDFLAGS)' -o $(BIN) ./cmd/snapdiff
 
+install: build
+	@echo 'Deleting old binary'
+	@sudo rm -f /usr/local/bin/snapdiff
+	@echo 'Copying binary to /usr/local/bin/snapdiff'
+	@sudo cp ./snapdiff /usr/local/bin/snapdiff
+	@echo 'Now you can run snapdiff'
+
 test:
 	go test ./...
 
