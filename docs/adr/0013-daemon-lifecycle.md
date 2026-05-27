@@ -18,20 +18,30 @@ Options:
 ## Decision
 
 - **`snapdiff await`** starts the HTTP server **in-process** (no subprocess
-  fork). On finalize, the server stays up for `linger_seconds` (default
-  60), then exits, taking the `await` process with it.
+  fork) and opens the reviewer's default browser at the bound URL as soon
+  as the listener is up (see ADR-0007; suppressible via
+  `SNAPDIFF_NO_BROWSER=1`). On finalize, the server exits **immediately**
+  so the agent's verdict JSON returns without delay; no linger window
+  applies in `await` mode.
 - **`snapdiff serve`** is an explicit alternative for ad-hoc review without
-  an agent loop. It runs until interrupted (Ctrl-C).
+  an agent loop. It runs until interrupted (Ctrl-C). It does **not** open
+  the browser — the user invoked it interactively and already has the URL
+  in their terminal. The configured `linger_seconds` applies on shutdown
+  so the browser can render the success state.
 
 The bind address comes from `snapdiff.toml` (`[server].bind`); the linger
-window is configurable too.
+window is configurable too (and only effective in `serve`).
 
 ## Consequences
 
 - Zero install/management overhead beyond dropping the binary on PATH.
-- The reviewer's browser tab survives finalize by `linger_seconds`,
-  enough to display "done — verdicts sent to agent" before the server
-  evaporates.
+- `await` returns verdicts to the agent the instant the reviewer hits
+  Finalize. The reviewer's browser tab will see a one-shot network error
+  on its next request — acceptable because the human work is already
+  done by that point.
+- In `serve`, the reviewer's browser tab survives finalize by
+  `linger_seconds`, enough to display "done — verdicts sent to agent"
+  before the server evaporates.
 - An agent that loops fast (e.g., fix, regenerate, `await` again) gets a
   fresh daemon each iteration. Acceptable; startup is cheap.
 
@@ -40,5 +50,6 @@ window is configurable too.
 - **Always-on daemon**: rejected for MVP — adds install ceremony.
   Reopenable behind a new ADR if reviewers want a single Tailscale URL
   for ad-hoc browsing.
-- **No linger**: rejected — browser would see a network error on finalize
-  before it could render the success state.
+- **Linger in `await` too**: rejected — the agent is blocked on stdout,
+  so any post-finalize delay is a delay in the agent's next iteration.
+  `serve` keeps linger because no agent is waiting on it.

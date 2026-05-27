@@ -11,8 +11,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -158,6 +160,16 @@ func runDaemon(args []string, emitJSON bool) error {
 		close(serveErrCh)
 	}()
 
+	// `await` is the agent-driven flow — pop the UI for the human reviewer as
+	// soon as the listener is bound. `serve` is interactive already, so the
+	// user opened the URL themselves. SNAPDIFF_NO_BROWSER suppresses it (used
+	// by the acceptance test, and handy in headless contexts).
+	if emitJSON && os.Getenv("SNAPDIFF_NO_BROWSER") == "" {
+		if err := openBrowser(browserURL(ln.Addr())); err != nil {
+			fmt.Fprintln(os.Stderr, "snapdiff: could not open browser:", err)
+		}
+	}
+
 	// In `await` mode the agent is blocking on stdout, so we exit immediately
 	// after finalize — no linger. `serve` mode keeps the configured linger so
 	// the browser can render the success state.
@@ -193,4 +205,34 @@ func writeJSON(w *os.File, v any) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+// browserURL converts a listener address into a URL safe for `open` /
+// `xdg-open`. Wildcard binds (0.0.0.0, ::) are not reachable from a browser
+// on every platform, so we point at the loopback instead.
+func browserURL(addr net.Addr) string {
+	tcp, ok := addr.(*net.TCPAddr)
+	if !ok {
+		return fmt.Sprintf("http://%s", addr.String())
+	}
+	host := tcp.IP.String()
+	if tcp.IP == nil || tcp.IP.IsUnspecified() {
+		host = "127.0.0.1"
+	} else if tcp.IP.To4() == nil {
+		host = "[" + host + "]"
+	}
+	return fmt.Sprintf("http://%s:%d", host, tcp.Port)
+}
+
+func openBrowser(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	return cmd.Start()
 }

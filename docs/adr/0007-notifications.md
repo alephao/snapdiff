@@ -19,13 +19,20 @@ Options:
 ## Decision
 
 **No notification system in MVP.** When `snapdiff await` spawns the daemon,
-it prints the review URL to stdout. The agent's transcript (Claude Code,
-shell, CI output) is where the reviewer sees it. The reviewer can leave
-the review tab open to receive updates via in-page polling/SSE later.
+it prints the review URL to stdout *and* opens the reviewer's default
+browser at that URL on the local machine. The agent's transcript (Claude
+Code, shell, CI output) remains the canonical signal for remote reviewers.
+The browser pop can be suppressed with `SNAPDIFF_NO_BROWSER=1` (used by
+the acceptance test and headless contexts). `snapdiff serve` does not pop
+the browser — it is invoked interactively, so the user already has a
+terminal open. The reviewer can leave the review tab open to receive
+updates via in-page polling/SSE later.
 
 ## Consequences
 
 - Smaller MVP, no service dependencies, no provider opinion baked in.
+- Reviewer at the agent's machine gets a zero-effort surface — the tab
+  appears the moment `await` is ready to accept verdicts.
 - Reviewer away from their devices won't know a review is pending until
   they next check their agent transcript. Acceptable tradeoff for MVP.
 - Adding notifications later is a pure feature addition behind a new ADR;

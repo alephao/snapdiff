@@ -34,6 +34,7 @@ func TestAcceptance_endToEnd(t *testing.T) {
 	cmd := exec.Command(binary, "await",
 		"--repo", repo,
 		"--config", filepath.Join(repo, "snapdiff.toml"))
+	cmd.Env = append(os.Environ(), "SNAPDIFF_NO_BROWSER=1")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
