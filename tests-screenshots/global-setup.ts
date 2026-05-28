@@ -71,23 +71,64 @@ export default async function globalSetup() {
   // 5. Hand off via env.
   process.env.SNAPDIFF_URL = url;
 
-  // 6. Persist runtime info for teardown + downstream readers.
-  fs.writeFileSync(RUNTIME_FILE, JSON.stringify({ pid: proc.pid, url, fixture: FIXTURE_DIR }, null, 2));
+  // 6. Spawn a second instance in `gallery` mode against the same fixture
+  //    so the gallery-spec tests can hit a parallel, read-only server
+  //    without disturbing the verdict state of the review-mode instance.
+  const gproc: ChildProcess = spawn(BIN_PATH, ['gallery', '--repo', FIXTURE_DIR], {
+    cwd: FIXTURE_DIR,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+    env: { ...process.env, SNAPDIFF_NO_BROWSER: '1' },
+  });
+  const galleryURL = await new Promise<string>((resolve, reject) => {
+    let stderrBuf = '';
+    const timeout = setTimeout(
+      () => reject(new Error(`timeout waiting for gallery URL. stderr=${stderrBuf}`)),
+      10_000,
+    );
+    gproc.stderr?.on('data', (chunk: Buffer) => {
+      stderrBuf += chunk.toString();
+      const m = stderrBuf.match(/gallery at (https?:\/\/\S+)/);
+      if (m) {
+        clearTimeout(timeout);
+        resolve(m[1].trim());
+      }
+    });
+    gproc.on('error', reject);
+    gproc.on('exit', (code, sig) =>
+      reject(new Error(`gallery exited early (code=${code} signal=${sig}). stderr=${stderrBuf}`)),
+    );
+  });
+  process.env.SNAPDIFF_GALLERY_URL = galleryURL;
 
-  // Probe /healthz to be sure it's actually serving.
-  for (let i = 0; i < 20; i++) {
-    try {
-      const r = await fetch(`${url}/healthz`);
-      if (r.ok) break;
-    } catch {
-      // not ready yet
+  // 7. Persist runtime info for teardown + downstream readers.
+  fs.writeFileSync(
+    RUNTIME_FILE,
+    JSON.stringify(
+      { pid: proc.pid, galleryPid: gproc.pid, url, galleryURL, fixture: FIXTURE_DIR },
+      null,
+      2,
+    ),
+  );
+
+  // Probe /healthz on both to be sure they're actually serving.
+  for (const u of [url, galleryURL]) {
+    for (let i = 0; i < 20; i++) {
+      try {
+        const r = await fetch(`${u}/healthz`);
+        if (r.ok) break;
+      } catch {
+        // not ready yet
+      }
+      await new Promise(r => setTimeout(r, 100));
     }
-    await new Promise(r => setTimeout(r, 100));
   }
 
-  // Detach so it survives a parent exit during dev re-runs; teardown
-  // will kill it explicitly.
-  proc.unref();
-  proc.stderr?.unref();
-  proc.stdout?.unref();
+  // Detach so they survive a parent exit during dev re-runs; teardown
+  // will kill them explicitly.
+  for (const p of [proc, gproc]) {
+    p.unref();
+    p.stderr?.unref();
+    p.stdout?.unref();
+  }
 }

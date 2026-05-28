@@ -29,6 +29,19 @@ export async function gotoStable(page: Page, pathAndQuery: string) {
 }
 
 /**
+ * Like gotoStable, but for the `snapdiff gallery` server. Uses an absolute
+ * URL pulled from SNAPDIFF_GALLERY_URL (set by global-setup), since the
+ * default baseURL points at the review-mode server.
+ */
+export async function gotoStableGallery(page: Page, pathAndQuery: string) {
+  const base = process.env.SNAPDIFF_GALLERY_URL;
+  if (!base) throw new Error('SNAPDIFF_GALLERY_URL not set — globalSetup did not run?');
+  await page.goto(base + noAnimURL(pathAndQuery), { waitUntil: 'networkidle' });
+  await awaitFonts(page);
+  await page.waitForTimeout(50);
+}
+
+/**
  * Snapshot name following snapdiff's expected axis_regex:
  *   <page>.<scenario>.<viewport>.png
  */
