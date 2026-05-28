@@ -112,8 +112,8 @@ templ focusedAxisbar(d GalleryDetailData) {
 }
 
 templ focusedStage(d GalleryDetailData) {
-	<section class="stage">
-		<div class="stage-inner">
+	<section class="gallery-stage">
+		<div class="gallery-stage-inner">
 			if d.Found {
 				<div class="shot-frame">
 					<img src={ string(templ.URL("/screenshot/" + d.FoundID + "/image.png")) } alt={ d.Path }/>
