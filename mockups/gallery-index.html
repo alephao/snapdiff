@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>snapdiff — gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="gallery-index.html">
+    <span class="mark">SNAPDIFF</span>
+    <span class="mode">Gallery</span>
+    <span class="repo">snapdiff<span class="sep">/</span>tests-screenshots<span class="sep">/</span>baselines</span>
+  </a>
+  <div class="session-meta">
+    <span>read-only · working tree</span>
+  </div>
+  <div class="counter-strip">
+    <div class="counter"><span class="n">26</span><span class="l">snapshots</span></div>
+    <div class="counter"><span class="n">3</span><span class="l">axes</span></div>
+  </div>
+</header>
+
+<nav class="mock-nav" aria-label="mock pages">
+  <span class="lbl">Mock pages</span>
+  <a href="gallery-index.html" class="is-active">Index</a>
+  <a href="gallery-detail-focused.html">Detail · focused</a>
+  <a href="gallery-detail-matrix.html">Detail · matrix</a>
+</nav>
+
+<section class="filterbar">
+  <span class="filter-label">Filter</span>
+  <div class="axes">
+    <div class="axis-select">
+      <span class="name">page</span>
+      <select class="is-any">
+        <option selected>(any)</option>
+        <option>diff</option>
+        <option>index</option>
+      </select>
+    </div>
+    <div class="axis-select">
+      <span class="name">scenario</span>
+      <select class="is-any">
+        <option selected>(any)</option>
+        <option>added</option>
+        <option>collapsed</option>
+        <option>deleted</option>
+        <option>filteredDark</option>
+        <option>mixedVerdicts</option>
+        <option>onionModified</option>
+        <option>pixelModified</option>
+        <option>populated</option>
+        <option>sideModified</option>
+        <option>swipeModified</option>
+        <option>toggleModified</option>
+        <option>verdictApproved</option>
+        <option>verdictRejected</option>
+      </select>
+    </div>
+    <div class="axis-select">
+      <span class="name">viewport</span>
+      <select>
+        <option>(any)</option>
+        <option selected>desktop</option>
+        <option>mobile</option>
+      </select>
+    </div>
+  </div>
+  <button class="clear-all">clear</button>
+</section>
+
+<section class="search-row">
+  <input class="search-input" type="search" placeholder="Search filename…">
+  <span class="match-count"><strong>13</strong> of 26 match</span>
+</section>
+
+<main class="gallery-wrap">
+  <div class="gallery-grid">
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-added-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-added-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">added</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-deleted-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-deleted-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">deleted</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-onionModified-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-onionModified-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">onionModified</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-pixelModified-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-pixelModified-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">pixelModified</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-sideModified-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-sideModified-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">sideModified</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-swipeModified-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-swipeModified-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">swipeModified</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-toggleModified-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-toggleModified-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">toggleModified</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-verdictApproved-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-verdictApproved-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">verdictApproved</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/diff-verdictRejected-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">diff-verdictRejected-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">diff</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">verdictRejected</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/index-collapsed-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">index-collapsed-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">index</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">collapsed</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/index-filteredDark-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">index-filteredDark-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">index</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">filteredDark</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/index-mixedVerdicts-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">index-mixedVerdicts-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">index</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">mixedVerdicts</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+    <a class="gcard" href="gallery-detail-focused.html">
+      <span class="gcard-thumb">
+        <img src="../tests-screenshots/baselines/index-populated-desktop.png" alt="">
+        <span class="thumb-tag">PNG</span>
+      </span>
+      <span class="gcard-body">
+        <span class="gcard-name">index-populated-desktop.png</span>
+        <span class="gcard-axes">
+          <span class="axval"><span class="k">page</span><span class="v">index</span></span>
+          <span class="axval"><span class="k">scenario</span><span class="v">populated</span></span>
+          <span class="axval"><span class="k">vp</span><span class="v">desktop</span></span>
+        </span>
+      </span>
+    </a>
+
+  </div>
+</main>
+
+</body>
+</html>

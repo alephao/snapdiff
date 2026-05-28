@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>snapdiff — gallery · matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="gallery-index.html">
+    <span class="mark">SNAPDIFF</span>
+    <span class="mode">Gallery</span>
+    <span class="repo">snapdiff<span class="sep">/</span>tests-screenshots<span class="sep">/</span>baselines</span>
+  </a>
+  <div class="session-meta">
+    <span>read-only · working tree</span>
+  </div>
+  <div class="counter-strip">
+    <div class="counter"><span class="n">26</span><span class="l">snapshots</span></div>
+  </div>
+</header>
+
+<nav class="mock-nav" aria-label="mock pages">
+  <span class="lbl">Mock pages</span>
+  <a href="gallery-index.html">Index</a>
+  <a href="gallery-detail-focused.html">Detail · focused</a>
+  <a href="gallery-detail-matrix.html" class="is-active">Detail · matrix</a>
+</nav>
+
+<header class="dt-topbar">
+  <a class="back" href="gallery-index.html"><span class="arrow">‹</span> All snapshots</a>
+  <div class="breadcrumb">
+    tests-screenshots / baselines
+    <span class="sep">›</span><span class="k">page=</span><span class="v">diff</span>
+    <span class="sep">›</span><span class="leaf"><span class="k">scenario × viewport</span></span>
+  </div>
+  <div class="view-tabs" role="tablist">
+    <a href="gallery-detail-focused.html" role="tab">Focused <kbd>1</kbd></a>
+    <a href="gallery-detail-matrix.html" class="is-active" role="tab" aria-selected="true">Matrix <kbd>2</kbd></a>
+  </div>
+</header>
+
+<section class="matrix-controls" aria-label="Matrix controls">
+  <span class="group-lbl">Layout</span>
+
+  <div class="axis-select">
+    <span class="name">rows</span>
+    <select>
+      <option>scenario</option>
+      <option>page</option>
+      <option>viewport</option>
+    </select>
+  </div>
+
+  <div class="axis-select">
+    <span class="name">cols</span>
+    <select>
+      <option>viewport</option>
+      <option>page</option>
+      <option>scenario</option>
+    </select>
+  </div>
+
+  <div class="locked">
+    <span class="group-lbl">Locked</span>
+    <div class="pill-group">
+      <span class="name">page</span>
+      <div class="pills">
+        <a class="pill is-active" href="#">diff</a>
+        <a class="pill" href="#">index</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="matrix-wrap">
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th class="corner">scenario&nbsp;↓ &nbsp;/&nbsp; viewport&nbsp;→</th>
+        <th class="col-head">desktop</th>
+        <th class="col-head">mobile</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr>
+        <th class="row-head">onionModified</th>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-onionModified-desktop.png" alt="">
+          </a>
+        </td>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-onionModified-mobile.png" alt="">
+          </a>
+        </td>
+      </tr>
+
+      <tr>
+        <th class="row-head">pixelModified</th>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-pixelModified-desktop.png" alt="">
+          </a>
+        </td>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-pixelModified-mobile.png" alt="">
+          </a>
+        </td>
+      </tr>
+
+      <tr>
+        <th class="row-head">sideModified</th>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-sideModified-desktop.png" alt="">
+          </a>
+        </td>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-sideModified-mobile.png" alt="">
+          </a>
+        </td>
+      </tr>
+
+      <tr>
+        <th class="row-head">verdictApproved</th>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-verdictApproved-desktop.png" alt="">
+          </a>
+        </td>
+        <td class="cell">
+          <a class="cell-frame" href="gallery-detail-focused.html">
+            <img src="../tests-screenshots/baselines/diff-verdictApproved-mobile.png" alt="">
+          </a>
+        </td>
+      </tr>
+
+      <tr>
+        <th class="row-head">collapsed</th>
+        <td class="cell">
+          <span class="cell-frame is-missing">
+            <span class="body">
+              <span class="glyph">·· ··</span>
+              <span>No variant</span>
+            </span>
+          </span>
+        </td>
+        <td class="cell">
+          <span class="cell-frame is-missing">
+            <span class="body">
+              <span class="glyph">·· ··</span>
+              <span>No variant</span>
+            </span>
+          </span>
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+</main>
+
+</body>
+</html>
