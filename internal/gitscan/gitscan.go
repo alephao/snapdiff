@@ -130,7 +130,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]Diff, []string, error) {
 			Status:   c.status,
 			Baseline: baseline,
 			Current:  current,
-			Axes:     s.extractAxes(c.path),
+			Axes:     ExtractAxes(s.AxisRegex, c.path),
 		})
 	}
 
@@ -147,16 +147,19 @@ func (s *Scanner) matchesAnyGlob(path string) bool {
 	return false
 }
 
-func (s *Scanner) extractAxes(path string) map[string]string {
-	if s.AxisRegex == nil {
+// ExtractAxes parses named-capture-group values out of a path. Returns nil
+// when re is nil (axis_regex unset) and an empty map when re does not match
+// (the caller is then free to bucket the item under "unparsed").
+func ExtractAxes(re *regexp.Regexp, path string) map[string]string {
+	if re == nil {
 		return nil
 	}
-	m := s.AxisRegex.FindStringSubmatch(path)
+	m := re.FindStringSubmatch(path)
 	if m == nil {
 		return map[string]string{}
 	}
 	out := map[string]string{}
-	for i, name := range s.AxisRegex.SubexpNames() {
+	for i, name := range re.SubexpNames() {
 		if name == "" {
 			continue
 		}
