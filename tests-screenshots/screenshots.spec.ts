@@ -44,30 +44,33 @@ test('diff side modified', async ({ page }, info) => {
   await expect(page).toHaveScreenshot(snap(info, 'diff', 'sideModified'), { fullPage: true });
 });
 
+// Modes are now driven by keyboard (1=side, 2=swipe, 3=toggle, 4=pixel,
+// 5=onion); the mode-button bar was removed in commit 982548e.
+
 test('diff swipe modified', async ({ page }, info) => {
   await gotoStable(page, '/diff/0');
-  await page.locator('.mode-btn[data-mode="swipe"]').click({ force: true });
+  await page.keyboard.press('2');
   await page.waitForTimeout(80);
   await expect(page).toHaveScreenshot(snap(info, 'diff', 'swipeModified'), { fullPage: true });
 });
 
 test('diff toggle modified', async ({ page }, info) => {
   await gotoStable(page, '/diff/0');
-  await page.locator('.mode-btn[data-mode="toggle"]').click({ force: true });
+  await page.keyboard.press('3');
   await page.waitForTimeout(80);
   await expect(page).toHaveScreenshot(snap(info, 'diff', 'toggleModified'), { fullPage: true });
 });
 
 test('diff pixel modified', async ({ page }, info) => {
   await gotoStable(page, '/diff/0');
-  await page.locator('.mode-btn[data-mode="pixel"]').click({ force: true });
+  await page.keyboard.press('4');
   await page.waitForTimeout(150);
   await expect(page).toHaveScreenshot(snap(info, 'diff', 'pixelModified'), { fullPage: true });
 });
 
 test('diff onion modified', async ({ page }, info) => {
   await gotoStable(page, '/diff/0');
-  await page.locator('.mode-btn[data-mode="onion"]').click({ force: true });
+  await page.keyboard.press('5');
   await page.waitForTimeout(80);
   await expect(page).toHaveScreenshot(snap(info, 'diff', 'onionModified'), { fullPage: true });
 });
