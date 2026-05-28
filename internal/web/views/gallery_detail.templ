@@ -1,0 +1,256 @@
+package views
+
+type GalleryDetailData struct {
+	RepoLabel string
+
+	// Identifies the "current state" — axes the user is looking at. May not
+	// correspond to a real PNG (then Found is false and Placeholder is shown).
+	Path        string // empty when Found is false
+	FoundID     string // item ID when Found is true
+	Found       bool
+	AxesCurrent map[string]string
+	AxisNames   []string
+
+	Mode       string // "focused" | "matrix"
+	FocusedURL string
+	MatrixURL  string
+
+	// Focused mode.
+	Options map[string][]AxisOption // axis -> dropdown options
+
+	// Matrix mode.
+	Rows        string
+	Cols        string
+	RowVals     []string
+	ColVals     []string
+	Locked      []LockedAxisDisplay
+	Cells       [][]MatrixCell
+	AxisChoices []string // axes available for rows/cols dropdowns
+
+	NoAnim bool
+}
+
+type AxisOption struct {
+	Value   string
+	Active  bool
+	Missing bool
+	URL     string // navigation target
+}
+
+type LockedAxisDisplay struct {
+	Name   string
+	Values []LockedAxisValue
+}
+
+type LockedAxisValue struct {
+	Value  string
+	Active bool
+	URL    string
+}
+
+type MatrixCell struct {
+	RowVal   string
+	ColVal   string
+	ImageURL string // /screenshot/{id}/image.png — empty when missing
+	LinkURL  string // /screenshot/{id} — empty when missing
+	Path     string
+	Missing  bool
+}
+
+templ GalleryDetail(d GalleryDetailData) {
+	@Base(detailTitle(d), d.NoAnim) {
+		@galleryDetailTopbar(d)
+		if d.Mode == "matrix" {
+			@matrixControls(d)
+			@matrixGrid(d)
+		} else {
+			@focusedAxisbar(d)
+			@focusedStage(d)
+		}
+	}
+}
+
+templ galleryDetailTopbar(d GalleryDetailData) {
+	<header class="dt-topbar">
+		<a class="back" href="/"><span class="arrow">‹</span> All snapshots</a>
+		<div class="breadcrumb">
+			for i, name := range d.AxisNames {
+				if i > 0 {
+					<span class="sep">›</span>
+				}
+				<span class="k">{ name }=</span><span class="v">{ d.AxesCurrent[name] }</span>
+			}
+			if !d.Found {
+				<span class="sep">·</span><span class="v" style="color:var(--rejected)">no PNG</span>
+			}
+		</div>
+		<div class="view-tabs" role="tablist">
+			<a href={ templ.URL(d.FocusedURL) } class={ tabClass(d.Mode == "focused") } role="tab">Focused <kbd>1</kbd></a>
+			<a href={ templ.URL(d.MatrixURL) } class={ tabClass(d.Mode == "matrix") } role="tab">Matrix <kbd>2</kbd></a>
+		</div>
+	</header>
+}
+
+templ focusedAxisbar(d GalleryDetailData) {
+	<section class="axisbar" aria-label="Axis controls">
+		<span class="lbl">Toggle axes</span>
+		for _, name := range d.AxisNames {
+			<div class="axis-select">
+				<span class="name">{ name }</span>
+				<select onchange="if(this.value) window.location.href = this.value">
+					for i, opt := range d.Options[name] {
+						if i > 0 && opt.Missing && !d.Options[name][i-1].Missing {
+							<option disabled value="">── no PNG ──</option>
+						}
+						<option value={ opt.URL } selected?={ opt.Active }>{ optionLabel(opt) }</option>
+					}
+				</select>
+			</div>
+		}
+		<span class="lbl" style="opacity:0.7">Options marked ✗ have no PNG on disk — selecting one shows a placeholder</span>
+	</section>
+}
+
+templ focusedStage(d GalleryDetailData) {
+	<section class="stage">
+		<div class="stage-inner">
+			if d.Found {
+				<div class="shot-frame">
+					<img src={ string(templ.URL("/screenshot/" + d.FoundID + "/image.png")) } alt={ d.Path }/>
+				</div>
+				<div class="shot-meta">
+					<span class="path">{ d.Path }</span>
+				</div>
+			} else {
+				<div class="shot-frame is-missing">
+					<div class="missing-body">
+						<div class="glyph">·· ··</div>
+						<h2>No PNG on disk</h2>
+						<p>No file matches the selected combination of axes.</p>
+					</div>
+				</div>
+				<div class="shot-meta">
+					<span class="path">
+						for i, n := range d.AxisNames {
+							if i > 0 {
+								<span> </span>
+							}
+							<span>{ n }=<code>{ d.AxesCurrent[n] }</code></span>
+						}
+					</span>
+				</div>
+			}
+		</div>
+	</section>
+}
+
+templ matrixControls(d GalleryDetailData) {
+	<form class="matrix-controls" method="get" action={ templ.URL(matrixActionURL(d)) }>
+		<span class="group-lbl">Layout</span>
+		<div class="axis-select">
+			<span class="name">rows</span>
+			<select name="rows" onchange="this.form.submit()">
+				for _, ax := range d.AxisChoices {
+					<option value={ ax } selected?={ ax == d.Rows }>{ ax }</option>
+				}
+			</select>
+		</div>
+		<div class="axis-select">
+			<span class="name">cols</span>
+			<select name="cols" onchange="this.form.submit()">
+				for _, ax := range d.AxisChoices {
+					<option value={ ax } selected?={ ax == d.Cols }>{ ax }</option>
+				}
+			</select>
+		</div>
+		if len(d.Locked) > 0 {
+			<div class="locked">
+				<span class="group-lbl">Locked</span>
+				for _, la := range d.Locked {
+					<div class="pill-group">
+						<span class="name">{ la.Name }</span>
+						<div class="pills">
+							for _, lv := range la.Values {
+								<a class={ lockedPillClass(lv.Active) } href={ templ.URL(lv.URL) }>{ lv.Value }</a>
+							}
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</form>
+}
+
+templ matrixGrid(d GalleryDetailData) {
+	<main class="matrix-wrap">
+		<table class="matrix">
+			<thead>
+				<tr>
+					<th class="corner">{ d.Rows } ↓&nbsp;/&nbsp;{ d.Cols } →</th>
+					for _, col := range d.ColVals {
+						<th class="col-head">{ col }</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				for i, row := range d.RowVals {
+					<tr>
+						<th class="row-head">{ row }</th>
+						for _, cell := range d.Cells[i] {
+							<td class="cell">
+								if cell.Missing {
+									<span class="cell-frame is-missing">
+										<span class="body">
+											<span class="glyph">·· ··</span>
+											<span>No variant</span>
+										</span>
+									</span>
+								} else {
+									<a class="cell-frame" href={ templ.URL(cell.LinkURL) }>
+										<img src={ string(templ.URL(cell.ImageURL)) } alt={ cell.Path } loading="lazy"/>
+									</a>
+								}
+							</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	</main>
+}
+
+// ---- helpers ----
+
+func detailTitle(d GalleryDetailData) string {
+	if d.Found && d.Path != "" {
+		return d.Path
+	}
+	return "Gallery"
+}
+
+func optionLabel(opt AxisOption) string {
+	if opt.Missing {
+		return opt.Value + " ✗"
+	}
+	return opt.Value
+}
+
+func tabClass(active bool) string {
+	if active {
+		return "is-active"
+	}
+	return ""
+}
+
+func lockedPillClass(active bool) string {
+	if active {
+		return "pill is-active"
+	}
+	return "pill"
+}
+
+func matrixActionURL(d GalleryDetailData) string {
+	// The form action points at the same URL minus its existing query string;
+	// rows/cols/lock_* are re-supplied by the form fields and links.
+	return d.MatrixURL
+}

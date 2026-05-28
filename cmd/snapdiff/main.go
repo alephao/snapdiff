@@ -20,6 +20,7 @@ import (
 
 	"github.com/alephao/snapdiff/internal/apply"
 	"github.com/alephao/snapdiff/internal/config"
+	"github.com/alephao/snapdiff/internal/gallery"
 	"github.com/alephao/snapdiff/internal/gitscan"
 	"github.com/alephao/snapdiff/internal/imdiff"
 	"github.com/alephao/snapdiff/internal/lifecycle"
@@ -35,6 +36,7 @@ const usage = `snapdiff — review screenshot-test diffs from an agent loop
 Usage:
   snapdiff await         block until the reviewer finalizes; emit verdict JSON
   snapdiff serve         start the UI ad-hoc (no verdict JSON output)
+  snapdiff gallery       browse every baseline PNG in the working tree (read-only)
   snapdiff version       print the version
 
 Common flags:
@@ -61,6 +63,8 @@ func run(args []string) error {
 		return runDaemon(args[1:], true /*emitJSON*/)
 	case "serve":
 		return runDaemon(args[1:], false)
+	case "gallery":
+		return runGallery(args[1:])
 	case "version", "--version", "-v":
 		fmt.Println(version)
 		return nil
@@ -197,6 +201,90 @@ func runDaemon(args []string, emitJSON bool) error {
 
 	if emitJSON {
 		return writeJSON(os.Stdout, finalResult)
+	}
+	return nil
+}
+
+// runGallery starts the read-only baseline browser. Unlike runDaemon, there
+// is no review session and no finalize step — the UI just serves PNGs from
+// the working tree until the user hits Ctrl-C.
+func runGallery(args []string) error {
+	fs := flag.NewFlagSet("snapdiff gallery", flag.ContinueOnError)
+	repoFlag := fs.String("repo", "", "repo directory (default: cwd)")
+	cfgFlag := fs.String("config", "", "path to snapdiff.toml (default: <repo>/snapdiff.toml)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	repoDir := *repoFlag
+	if repoDir == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("getwd: %w", err)
+		}
+		repoDir = cwd
+	}
+	cfgPath := *cfgFlag
+	if cfgPath == "" {
+		cfgPath = filepath.Join(repoDir, "snapdiff.toml")
+	}
+	cfg, err := config.Load(cfgPath)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	scanner := &gallery.Scanner{
+		RepoDir:   repoDir,
+		Globs:     cfg.Snapshots.Globs,
+		AxisRegex: cfg.Snapshots.AxisRegex,
+	}
+	items, warnings, err := scanner.Scan(ctx)
+	if err != nil {
+		return err
+	}
+	for _, w := range warnings {
+		fmt.Fprintln(os.Stderr, "snapdiff: warning:", w)
+	}
+
+	ln, err := net.Listen("tcp", cfg.Server.Bind)
+	if err != nil {
+		return fmt.Errorf("listen %s: %w", cfg.Server.Bind, err)
+	}
+	publicURL := fmt.Sprintf("http://%s", ln.Addr().String())
+	srv := web.NewGalleryServer(items, repoDir, publicURL)
+	srv.SetRepoLabel(filepath.Base(repoDir) + "/")
+	httpServer := &http.Server{
+		Handler:           srv.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+
+	fmt.Fprintln(os.Stderr, "snapdiff: gallery at", publicURL)
+	fmt.Fprintf(os.Stderr, "snapdiff: %d snapshot(s) found.\n", len(items))
+
+	serveErrCh := make(chan error, 1)
+	go func() {
+		if err := httpServer.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serveErrCh <- err
+		}
+		close(serveErrCh)
+	}()
+
+	if os.Getenv("SNAPDIFF_NO_BROWSER") == "" {
+		if err := openBrowser(browserURL(ln.Addr())); err != nil {
+			fmt.Fprintln(os.Stderr, "snapdiff: could not open browser:", err)
+		}
+	}
+
+	<-ctx.Done()
+	shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutCancel()
+	_ = httpServer.Shutdown(shutCtx)
+
+	if err, ok := <-serveErrCh; ok && err != nil {
+		return err
 	}
 	return nil
 }

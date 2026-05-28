@@ -1,0 +1,151 @@
+package views
+
+import "fmt"
+
+type GalleryIndexData struct {
+	RepoLabel string
+	Items     []GalleryItemView // already filtered
+	AxisNames []string          // sorted
+	AxisOpts  map[string][]FilterAxisOption // axis -> ordered options (available first, then disabled)
+	Filter    map[string]string // axis -> selected value (empty = "any")
+	Search    string
+	Matched   int
+	Total     int
+	NoAnim    bool
+}
+
+// FilterAxisOption is one value of an axis as it should appear in the
+// filterbar dropdown. Available options (those that would yield at least
+// one match given the other current filters) precede Disabled ones.
+type FilterAxisOption struct {
+	Value    string
+	Matches  int
+	Disabled bool
+}
+
+type GalleryItemView struct {
+	ID    string
+	Path  string
+	Name  string // basename(Path)
+	Axes  map[string]string
+}
+
+templ GalleryIndex(d GalleryIndexData) {
+	@Base("Gallery", d.NoAnim) {
+		@galleryTopbar(d.RepoLabel, d.Total, len(d.AxisNames))
+		<form class="filterbar" method="get" action="/">
+			<span class="filter-label">filter</span>
+			<div class="axes">
+				for _, name := range d.AxisNames {
+					@axisDropdown(name, d.AxisOpts[name], d.Filter[name])
+				}
+			</div>
+			if anyFilterActive(d.Filter, d.Search) {
+				<a class="clear-all" href="/">clear filters ✕</a>
+			} else {
+				<span></span>
+			}
+			<section class="search-row gallery-search-row">
+				<input class="search-input" type="search" name="q" value={ d.Search } placeholder="search filename…" oninput="if(this.value===''){this.form.submit()}" onchange="this.form.submit()"/>
+				<span class="match-count"><strong>{ fmt.Sprint(d.Matched) }</strong> of { fmt.Sprint(d.Total) } match</span>
+				<span></span>
+			</section>
+		</form>
+		<main class="gallery-wrap">
+			if len(d.Items) == 0 {
+				<section class="empty">
+					<h1>No matches</h1>
+					<p>No PNGs in the working tree match the current filter.</p>
+				</section>
+			} else {
+				<div class="gallery-grid">
+					for _, it := range d.Items {
+						@galleryCard(it, d.AxisNames)
+					}
+				</div>
+			}
+		</main>
+	}
+}
+
+templ galleryTopbar(repoLabel string, total, axisCount int) {
+	<header class="topbar">
+		<a class="brand" href="/">
+			<span class="mark">snapdiff</span>
+			<span class="mode">Gallery</span>
+			<span class="repo">{ repoLabel }</span>
+		</a>
+		<div class="session-meta">
+			<span>read-only · working tree</span>
+		</div>
+		<div class="counter-strip">
+			<div class="counter"><span class="n">{ fmt.Sprint(total) }</span><span class="l">snapshots</span></div>
+			<div class="counter"><span class="n">{ fmt.Sprint(axisCount) }</span><span class="l">axes</span></div>
+		</div>
+	</header>
+}
+
+// axisDropdown renders one filterbar dropdown. Options are pre-partitioned
+// by the handler: available values first, then a disabled "── no matches ──"
+// divider, then options that would yield zero matches under the current
+// other filters (also disabled). If the user's current selection happens to
+// fall in the disabled group, we keep that single value enabled so they can
+// change off of it.
+templ axisDropdown(name string, opts []FilterAxisOption, current string) {
+	<div class="axis-select">
+		<span class="name">{ name }</span>
+		<select name={ "filter_" + name } class={ axisSelectClass(current, true) } onchange="this.form.submit()">
+			<option value="" selected?={ current == "" }>(any)</option>
+			for i, opt := range opts {
+				if i > 0 && opt.Disabled && !opts[i-1].Disabled {
+					<option disabled value="">── no matches ──</option>
+				}
+				<option value={ opt.Value } selected?={ opt.Value == current } disabled?={ opt.Disabled && opt.Value != current }>{ filterOptionLabel(opt) }</option>
+			}
+		</select>
+	</div>
+}
+
+templ galleryCard(it GalleryItemView, axisNames []string) {
+	<a class="gcard" href={ templ.URL("/screenshot/" + it.ID) }>
+		<span class="gcard-thumb">
+			<img src={ string(templ.URL("/screenshot/" + it.ID + "/image.png")) } alt={ it.Name } loading="lazy"/>
+			<span class="thumb-tag">PNG</span>
+		</span>
+		<span class="gcard-body">
+			<span class="gcard-name">{ it.Name }</span>
+			<span class="gcard-axes">
+				for _, n := range axisNames {
+					if v, ok := it.Axes[n]; ok && v != "" {
+						<span class="axval"><span class="k">{ n }</span><span class="v">{ v }</span></span>
+					}
+				}
+			</span>
+		</span>
+	</a>
+}
+
+// ---- helpers ----
+
+func axisSelectClass(current string, withAnyOption bool) string {
+	if withAnyOption && current == "" {
+		return "is-any"
+	}
+	return ""
+}
+
+func filterOptionLabel(opt FilterAxisOption) string {
+	return fmt.Sprintf("%s (%d)", opt.Value, opt.Matches)
+}
+
+func anyFilterActive(filter map[string]string, search string) bool {
+	if search != "" {
+		return true
+	}
+	for _, v := range filter {
+		if v != "" {
+			return true
+		}
+	}
+	return false
+}
