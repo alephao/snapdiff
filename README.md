@@ -14,6 +14,19 @@ single CLI command, you triage the diffs in a web UI — approve, or reject with
 comment — and the command exits with a JSON verdict per file that the agent can
 act on (commit, iterate, move on).
 
+<table>
+  <tr>
+    <td width="33%"><img src="tests-screenshots/baselines/index-mixedVerdicts-desktop.png" alt="Triage index grouped by axes with verdict states"></td>
+    <td width="33%"><img src="tests-screenshots/baselines/diff-verdictApproved-desktop.png" alt="Side-by-side diff review with the verdict panel"></td>
+    <td width="33%"><img src="tests-screenshots/baselines/gallery-indexFiltered-desktop.png" alt="Baseline gallery filtered by axis"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Triage index — diffs grouped by axis</sub></td>
+    <td align="center"><sub>Per-diff review with verdicts</sub></td>
+    <td align="center"><sub>Read-only baseline gallery</sub></td>
+  </tr>
+</table>
+
 What makes it small and predictable:
 
 - **Git-driven.** Diffs are discovered by comparing the working tree against
